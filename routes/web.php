@@ -7,6 +7,7 @@ use App\Http\Controllers\TopupController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\DonateController;
+use App\Http\Controllers\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,11 +15,32 @@ use App\Http\Controllers\DonateController;
 |--------------------------------------------------------------------------
 */
 
+// Redirect root to sign-in
 Route::get('/', function () {
-    return redirect('/dashboard');
+    return redirect('/sign-in');
 });
 
-// Dashboard Routes
+// Authentication Routes
+Route::get('/sign-in', [AuthController::class, 'showSignIn'])->name('sign-in');
+Route::post('/sign-in', [AuthController::class, 'signIn'])->name('sign-in.post');
+Route::get('/sign-up', [AuthController::class, 'showSignUp'])->name('sign-up');
+Route::post('/sign-up', [AuthController::class, 'signUp'])->name('sign-up.post');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Placeholder routes for terms, privacy, forgot password
+Route::get('/terms', function() {
+    return view('legal.terms');
+})->name('terms');
+
+Route::get('/privacy', function() {
+    return view('legal.privacy');
+})->name('privacy');
+
+Route::get('/forgot-password', function() {
+    return view('auth.forgot-password');
+})->name('forgot-password');
+
+// Dashboard Routes (protected)
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 // Account Routes
@@ -35,8 +57,6 @@ Route::get('/account/setting', [AccountController::class, 'setting'])->name('acc
 Route::post('/account/updateSettings', [AccountController::class, 'updateSettings'])->name('account.updateSettings');
 Route::post('/account/updateLanguage', [AccountController::class, 'updateLanguage'])->name('account.updateLanguage');
 Route::post('/account/delete', [AccountController::class, 'delete'])->name('account.delete');
-
-Route::post('/logout', [AccountController::class, 'logout'])->name('logout');
 
 // Topup Routes
 Route::get('/topup', [TopupController::class, 'index'])->name('topup');

@@ -15,10 +15,10 @@ use App\Http\Controllers\AuthController;
 |--------------------------------------------------------------------------
 */
 
-// Redirect root to sign-in
+// Landing Page
 Route::get('/', function () {
-    return redirect('/sign-in');
-});
+    return view('landing-page');
+})->name('landing');
 
 // Authentication Routes
 Route::get('/sign-in', [AuthController::class, 'showSignIn'])->name('sign-in');

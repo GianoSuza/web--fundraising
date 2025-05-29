@@ -140,27 +140,27 @@
     <div class="flex justify-center space-x-8 mb-8">
         <a href="{{ route('campaigns.category', 'bencana') }}" class="icon-btn flex flex-col items-center p-4 hover:bg-gray-100 rounded-lg transition-all duration-200">
             <div class="w-12 h-12 rounded-full overflow-hidden mb-2 border-2 border-gray-200">
-                <img src="https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=50&h=50&fit=crop" alt="Bencana" class="w-full h-full object-cover">
+                <img src="images/bencana.png" alt="Bencana" class="w-full h-full object-cover">
             </div>
             <span class="text-xs text-gray-700">{{ session('locale') == 'en' ? 'Disaster' : 'Bencana' }}</span>
         </a>
         <a href="{{ route('campaigns.category', 'medis') }}" class="icon-btn flex flex-col items-center p-4 hover:bg-gray-100 rounded-lg transition-all duration-200">
             <div class="w-12 h-12 rounded-full overflow-hidden mb-2 border-2 border-red-200">
-                <img src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=50&h=50&fit=crop" alt="Medis" class="w-full h-full object-cover">
+                <img src="images/medis.png" alt="Medis" class="w-full h-full object-cover">
             </div>
             <span class="text-xs text-gray-700">{{ session('locale') == 'en' ? 'Medical' : 'Medis' }}</span>
         </a>
         <a href="{{ route('campaigns.category', 'kebakaran') }}" class="icon-btn flex flex-col items-center p-4 hover:bg-gray-100 rounded-lg transition-all duration-200">
             <div class="w-12 h-12 rounded-full overflow-hidden mb-2 border-2 border-orange-200">
-                <img src="https://images.unsplash.com/photo-1574169208507-84376144848b?w=50&h=50&fit=crop" alt="Kebakaran" class="w-full h-full object-cover">
+                <img src="images/kebakaran.png" alt="Kebakaran" class="w-full h-full object-cover">
             </div>
             <span class="text-xs text-gray-700">{{ session('locale') == 'en' ? 'Fire' : 'Kebakaran' }}</span>
         </a>
         <a href="{{ route('campaigns.category', 'duafa') }}" class="icon-btn flex flex-col items-center p-4 hover:bg-gray-100 rounded-lg transition-all duration-200">
             <div class="w-12 h-12 rounded-full overflow-hidden mb-2 border-2 border-yellow-200">
-                <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=50&h=50&fit=crop" alt="Duafa" class="w-full h-full object-cover">
+                <img src="duafa" alt="Duafa" class="w-full h-full object-cover">
             </div>
-            <span class="text-xs text-gray-700">{{ session('locale') == 'en' ? 'Poor' : 'Duafa' }}</span>
+            <span class="text-xs text-gray-700">{{ session('locale') == 'en' ? 'Duafa' : 'Duafa' }}</span>
         </a>
     </div>
 

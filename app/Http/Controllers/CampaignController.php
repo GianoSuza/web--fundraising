@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class CampaignController extends Controller
 {
@@ -45,7 +46,7 @@ class CampaignController extends Controller
                 'id' => 2,
                 'title' => 'Operasi Jantung Anak',
                 'description' => 'Anak berusia 8 tahun membutuhkan operasi jantung segera. Keluarga tidak mampu membiayai operasi yang membutuhkan biaya sangat besar ini.',
-                'category' => 'Kesehatan',
+                'category' => 'Medis',
                 'image' => 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop',
                 'target' => 20000000,
                 'collected' => 8500000,
@@ -71,7 +72,7 @@ class CampaignController extends Controller
                 'id' => 3,
                 'title' => 'Bantuan Pendidikan Anak Yatim',
                 'description' => 'Program beasiswa untuk anak-anak yatim agar dapat melanjutkan pendidikan hingga jenjang yang lebih tinggi.',
-                'category' => 'Pendidikan',
+                'category' => 'Duafa',
                 'image' => 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop',
                 'target' => 20000000,
                 'collected' => 12000000,
@@ -109,5 +110,92 @@ class CampaignController extends Controller
     {
         // Redirect ke halaman donasi dengan ID campaign
         return redirect()->route('donate', ['campaign_id' => $id]);
+    }
+
+    public function create()
+    {
+        // Data untuk dropdown kategori dengan path gambar
+        $categories = [
+            'duafa' => [
+                'name' => 'Duafa',
+                'image' => 'images/duafa.png'
+            ],
+            'medis' => [
+                'name' => 'Medis',
+                'image' => 'images/medis.png'
+            ],
+            'kebakaran' => [
+                'name' => 'Kebakaran',
+                'image' => 'images/kebakaran.png'
+            ],
+            'bencana_alam' => [
+                'name' => 'Bencana Alam',
+                'image' => 'images/bencana.png'
+            ]
+        ];
+
+        return view('campaigns.create', compact('categories'));
+    }
+
+    public function store(Request $request)
+    {
+        // Validasi input
+        $validator = Validator::make($request->all(), [
+            'donation_name' => 'required|string|max:255',
+            'target_value' => 'required|string',
+            'category' => 'required|string|in:duafa,medis,kebakaran,bencana_alam',
+            'description' => 'required|string|min:50',
+            'finish_date' => 'required|date|after:today',
+            'campaign_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ], [
+            'donation_name.required' => 'Nama kampanye harus diisi',
+            'donation_name.max' => 'Nama kampanye tidak boleh lebih dari 255 karakter',
+            'target_value.required' => 'Target nilai harus diisi',
+            'category.required' => 'Kategori harus dipilih',
+            'category.in' => 'Kategori yang dipilih tidak valid',
+            'description.required' => 'Deskripsi harus diisi',
+            'description.min' => 'Deskripsi minimal 50 karakter',
+            'finish_date.required' => 'Tanggal selesai harus diisi',
+            'finish_date.date' => 'Format tanggal tidak valid',
+            'finish_date.after' => 'Tanggal selesai harus setelah hari ini',
+            'campaign_image.image' => 'File harus berupa gambar',
+            'campaign_image.mimes' => 'Gambar harus berformat jpeg, png, jpg, atau gif',
+            'campaign_image.max' => 'Ukuran gambar tidak boleh lebih dari 2MB'
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        // Konversi target value dari format currency ke angka
+        $targetValue = str_replace(['.', ','], '', $request->target_value);
+        $targetValue = (int) $targetValue;
+
+        // Validasi minimum target value
+        if ($targetValue < 100000) {
+            return redirect()->back()->withErrors(['target_value' => 'Target nilai minimal Rp 100.000'])->withInput();
+        }
+
+        // Logic untuk menyimpan campaign
+        // Dalam implementasi nyata, simpan ke database
+        // 
+        // if ($request->hasFile('campaign_image')) {
+        //     $imagePath = $request->file('campaign_image')->store('campaigns', 'public');
+        // }
+        // 
+        // Campaign::create([
+        //     'title' => $request->donation_name,
+        //     'target' => $targetValue,
+        //     'category' => $request->category,
+        //     'description' => $request->description,
+        //     'finish_date' => $request->finish_date,
+        //     'image' => $imagePath ?? null,
+        //     'user_id' => Auth::id(),
+        //     'status' => 'pending' // untuk review admin
+        // ]);
+
+        $successMessage = 'Kampanye berhasil dibuat! Akan ditinjau oleh tim kami.';
+
+        return redirect()->route('dashboard')->with('success', $successMessage);
     }
 }

@@ -64,6 +64,10 @@ Route::post('/topup/process', [TopupController::class, 'process'])->name('topup.
 Route::get('/topup/success', [TopupController::class, 'success'])->name('topup.success');
 Route::get('/topup/instruction', [TopupController::class, 'instruction'])->name('topup.instruction');
 
+// Create Campaign Routes
+Route::get('/campaign/create', [CampaignController::class, 'create'])->name('campaign.create');
+Route::post('/campaign/store', [CampaignController::class, 'store'])->name('campaign.store');
+
 // Campaign Routes
 Route::get('/campaign/{id}', [CampaignController::class, 'detail'])->name('campaign.detail');
 Route::get('/campaign/{id}/donate', [CampaignController::class, 'donate'])->name('campaign.donate');
@@ -71,6 +75,7 @@ Route::get('/campaign/{id}/donate', [CampaignController::class, 'donate'])->name
 // Donate Routes
 Route::get('/donate', [DonateController::class, 'index'])->name('donate');
 Route::post('/donate/process', [DonateController::class, 'process'])->name('donate.process');
+Route::get('/donate/instruction', [DonateController::class, 'instruction'])->name('donate.instruction');
 Route::get('/donate/success', [DonateController::class, 'success'])->name('donate.success');
 
 // Other Routes

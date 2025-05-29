@@ -103,10 +103,115 @@ class DonateController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        // Process donation logic here
-        // For now, redirect to success page
-        return redirect()->route('donate.success')->with('success', 'Donation successful!');
+        // Jika payment method adalah saldo, langsung ke success
+        if ($request->payment_method === 'balance') {
+            // TODO: Di sini bisa ditambahkan logic untuk mengurangi saldo user
+            // Auth::user()->balance -= $request->amount;
+            // Auth::user()->save();
+            
+            return redirect()->route('donate.success');
+        }
+
+        // Untuk payment method lainnya (bank transfer, QRIS), redirect ke halaman instruksi
+        return redirect()->route('donate.instruction', [
+            'campaign_id' => $request->campaign_id,
+            'amount' => $request->amount,
+            'method' => $request->payment_method
+        ]);
     }
+
+    public function instruction(Request $request)
+    {
+        $campaignId = $request->get('campaign_id');
+        $amount = $request->get('amount');
+        $selectedMethod = $request->get('method');
+
+        // Validasi parameter
+        if (!$amount || !$selectedMethod || !$campaignId) {
+            return redirect()->route('donate', ['campaign_id' => $campaignId])->with('error', 'Invalid payment data');
+        }
+
+        // Validasi metode pembayaran yang valid
+        $validMethods = ['bca', 'mandiri', 'bri', 'qris', 'balance'];
+        if (!in_array($selectedMethod, $validMethods)) {
+            return redirect()->route('donate', ['campaign_id' => $campaignId])->with('error', 'Invalid payment method');
+        }
+
+        // Simulasi data campaign
+        $campaigns = [
+            1 => [
+                'id' => 1,
+                'title' => 'Bantu Korban Banjir Jakarta',
+                'image' => 'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=800&h=600&fit=crop',
+            ],
+            2 => [
+                'id' => 2,
+                'title' => 'Operasi Jantung Anak',
+                'image' => 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop',
+            ],
+            3 => [
+                'id' => 3,
+                'title' => 'Bantuan Pendidikan Anak Yatim',
+                'image' => 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop',
+        ]
+    ];
+
+    $campaign = $campaigns[$campaignId] ?? null;
+    
+    if (!$campaign) {
+        return redirect()->route('dashboard')->with('error', 'Campaign not found');
+    }
+
+    // Data untuk metode pembayaran
+    $paymentMethods = [
+        [
+            'id' => 'bca',
+            'name' => 'Bank Central Asia',
+            'logo' => 'https://upload.wikimedia.org/wikipedia/id/thumb/5/5c/Bank_Central_Asia.svg/200px-Bank_Central_Asia.svg.png'
+        ],
+        [
+            'id' => 'mandiri',
+            'name' => 'Mandiri',
+            'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Bank_Mandiri_logo_2016.svg/200px-Bank_Mandiri_logo_2016.svg.png'
+        ],
+        [
+            'id' => 'bri',
+            'name' => 'BRI',
+            'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/BANK_BRI_logo.svg/200px-BANK_BRI_logo.svg.png'
+        ],
+        [
+            'id' => 'qris',
+            'name' => 'QRIS',
+            'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/QRIS_logo.svg/200px-QRIS_logo.svg.png'
+        ],
+        [
+            'id' => 'balance',
+            'name' => 'Saldo Bantu.In',
+            'logo' => null
+        ]
+    ];
+
+    // Data bank details
+    $bankDetails = [
+        'bca' => [
+            'name' => 'Bank Central Asia',
+            'account' => '1234567890',
+            'holder' => 'PT Bantu Indonesia'
+        ],
+        'mandiri' => [
+            'name' => 'Bank Mandiri',
+            'account' => '9876543210',
+            'holder' => 'PT Bantu Indonesia'
+        ],
+        'bri' => [
+            'name' => 'Bank Rakyat Indonesia',
+            'account' => '5555666677',
+            'holder' => 'PT Bantu Indonesia'
+        ]
+    ];
+
+    return view('donate.instruction', compact('campaign', 'amount', 'selectedMethod', 'paymentMethods', 'bankDetails'));
+}
 
     public function success()
     {

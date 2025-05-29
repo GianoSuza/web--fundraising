@@ -413,6 +413,19 @@
             // Payment method selection
             document.querySelectorAll('.payment-method').forEach(method => {
                 method.addEventListener('click', function() {
+                    const methodId = this.getAttribute('data-method');
+        
+                    // Jika memilih saldo, cek apakah saldo mencukupi
+                    if (methodId === 'balance') {
+                        const currentAmount = parseInt(unformatAmount(amountInput.value)) || 0;
+                        const userBalance = {{ $userBalance }};
+                        
+                        if (currentAmount > userBalance) {
+                            alert('{{ session('locale') == 'en' ? 'Insufficient balance. Please top up first.' : 'Saldo tidak mencukupi. Silakan top up terlebih dahulu.' }}');
+                            return;
+                        }
+                    }
+                    
                     // Remove selected class from all methods
                     document.querySelectorAll('.payment-method').forEach(m => {
                         m.classList.remove('selected');
@@ -430,7 +443,7 @@
                     // Update selected text
                     const methodName = this.getAttribute('data-name');
                     selectedPaymentText.textContent = methodName;
-                    selectedPayment = this.getAttribute('data-method');
+                    selectedPayment = methodId;
                     
                     // Close dropdown
                     paymentMethods.classList.remove('show');
@@ -438,8 +451,20 @@
                     
                     // Enable continue button
                     continueBtn.disabled = false;
+                    
+                    // Update continue button text
+                    setTimeout(updateContinueButton, 100);
                 });
             });
+
+            // Update continue button text based on payment method
+            function updateContinueButton() {
+                if (selectedPayment === 'balance') {
+                    continueBtn.textContent = '{{ session('locale') == 'en' ? 'Donate Now' : 'Donasi Sekarang' }}';
+                } else {
+                    continueBtn.textContent = '{{ session('locale') == 'en' ? 'Continue' : 'Lanjutkan' }}';
+                }
+            }
             
             // Form submission
             document.getElementById('donateForm').addEventListener('submit', function(e) {
@@ -451,6 +476,8 @@
                 continueBtn.disabled = true;
                 continueBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>' + 
                     (localStorage.getItem('language') === 'en' ? 'Processing...' : 'Memproses...');
+                
+                // Biarkan form submit secara normal ke donate.process
             });
             
             // Initially disable continue button

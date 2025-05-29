@@ -158,7 +158,7 @@
         </a>
         <a href="{{ route('campaigns.category', 'duafa') }}" class="icon-btn flex flex-col items-center p-4 hover:bg-gray-100 rounded-lg transition-all duration-200">
             <div class="w-12 h-12 rounded-full overflow-hidden mb-2 border-2 border-yellow-200">
-                <img src="duafa" alt="Duafa" class="w-full h-full object-cover">
+                <img src="images/duafa.png" alt="Duafa" class="w-full h-full object-cover">
             </div>
             <span class="text-xs text-gray-700">{{ session('locale') == 'en' ? 'Duafa' : 'Duafa' }}</span>
         </a>
@@ -207,6 +207,22 @@
 <!-- Bantu.In Logo -->
 <div class="py-8 pl-4">
     <h1 class="text-3xl font-bold text-custom-teal">Bantu.In</h1>
+</div>
+
+<!-- Floating Create Campaign Button -->
+<div class="fixed bottom-6 right-6 z-50">
+    <a href="{{ route('campaign.create') }}" class="group relative">
+        <!-- Simple White Button -->
+        <div class="w-14 h-14 bg-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center justify-center border border-gray-100">
+            <i class="fas fa-plus text-gray-600 text-lg"></i>
+        </div>
+        
+        <!-- Tooltip -->
+        <div class="absolute bottom-full right-0 mb-2 px-3 py-1 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+            {{ session('locale') == 'en' ? 'Create Campaign' : 'Buat Kampanye' }}
+            <div class="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+        </div>
+    </a>
 </div>
 
 <script>

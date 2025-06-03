@@ -187,113 +187,29 @@
 
         <!-- Transaction History -->
         <div class="grid md:grid-cols-2 gap-8">
-            <!-- This Month -->
+            @foreach($transactions as $month => $monthTransactions)
             <div class="month-section">
-                <div class="month-header">{{ session('locale') == 'en' ? 'This month' : 'Bulan ini' }}</div>
+                <div class="month-header">{{ $month }}</div>
                 <div class="bg-white rounded-lg shadow-sm p-4 transition-colors duration-300">
-                    <!-- Top up balance -->
+                    @foreach($monthTransactions as $transaction)
                     <div class="transaction-item flex items-center justify-between">
                         <div class="flex items-center space-x-3">
-                            <div class="transaction-icon income">+</div>
+                            <div class="transaction-icon {{ $transaction['type'] === 'topup' ? 'income' : 'expense' }}">
+                                {{ $transaction['type'] === 'topup' ? '+' : '-' }}
+                            </div>
                             <div>
-                                <div class="font-medium text-gray-800">{{ session('locale') == 'en' ? 'Top up balance' : 'Top up saldo' }}</div>
-                                <div class="text-sm text-gray-500">5 Apr 2024</div>
+                                <div class="font-medium text-gray-800">{{ $transaction['title'] }}</div>
+                                <div class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($transaction['date'])->format('d M Y') }}</div>
                             </div>
                         </div>
-                        <div class="amount-income font-semibold">+Rp 50.000</div>
-                    </div>
-
-                    <!-- Bencana Alam Aceh -->
-                    <div class="transaction-item flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="transaction-icon expense">-</div>
-                            <div>
-                                <div class="font-medium text-gray-800">{{ session('locale') == 'en' ? 'Natural Disaster Aceh' : 'Bencana Alam Aceh' }}</div>
-                                <div class="text-sm text-gray-500">4 Apr 2024</div>
-                            </div>
+                        <div class="{{ $transaction['type'] === 'topup' ? 'amount-income' : 'amount-expense' }} font-semibold">
+                            {{ $transaction['type'] === 'topup' ? '+' : '-' }}Rp {{ number_format(abs($transaction['amount']), 0, ',', '.') }}
                         </div>
-                        <div class="amount-expense font-semibold">-Rp 25.000</div>
                     </div>
-
-                    <!-- Bangun Masjid -->
-                    <div class="transaction-item flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="transaction-icon expense">-</div>
-                            <div>
-                                <div class="font-medium text-gray-800">{{ session('locale') == 'en' ? 'Build Mosque' : 'Bangun Masjid' }}</div>
-                                <div class="text-sm text-gray-500">4 Apr 2024</div>
-                            </div>
-                        </div>
-                        <div class="amount-expense font-semibold">-Rp 25.000</div>
-                    </div>
-
-                    <!-- Top up balance -->
-                    <div class="transaction-item flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="transaction-icon income">+</div>
-                            <div>
-                                <div class="font-medium text-gray-800">{{ session('locale') == 'en' ? 'Top up balance' : 'Top up saldo' }}</div>
-                                <div class="text-sm text-gray-500">3 Apr 2024</div>
-                            </div>
-                        </div>
-                        <div class="amount-income font-semibold">+Rp 50.000</div>
-                    </div>
-
-                    <!-- Bangun Masjid -->
-                    <div class="transaction-item flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="transaction-icon expense">-</div>
-                            <div>
-                                <div class="font-medium text-gray-800">{{ session('locale') == 'en' ? 'Build Mosque' : 'Bangun Masjid' }}</div>
-                                <div class="text-sm text-gray-500">1 Apr 2024</div>
-                            </div>
-                        </div>
-                        <div class="amount-expense font-semibold">-Rp 10.000</div>
-                    </div>
+                    @endforeach
                 </div>
             </div>
-
-            <!-- Mar 2024 -->
-            <div class="month-section">
-                <div class="month-header">Mar 2024</div>
-                <div class="bg-white rounded-lg shadow-sm p-4 transition-colors duration-300">
-                    <!-- Banjir Demak -->
-                    <div class="transaction-item flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="transaction-icon expense">-</div>
-                            <div>
-                                <div class="font-medium text-gray-800">{{ session('locale') == 'en' ? 'Flood Demak' : 'Banjir Demak' }}</div>
-                                <div class="text-sm text-gray-500">29 Mar 2024</div>
-                            </div>
-                        </div>
-                        <div class="amount-expense font-semibold">-Rp 50.000</div>
-                    </div>
-
-                    <!-- Bantuan sosial -->
-                    <div class="transaction-item flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="transaction-icon expense">-</div>
-                            <div>
-                                <div class="font-medium text-gray-800">{{ session('locale') == 'en' ? 'Social assistance' : 'Bantuan sosial' }}</div>
-                                <div class="text-sm text-gray-500">29 Mar 2024</div>
-                            </div>
-                        </div>
-                        <div class="amount-expense font-semibold">-Rp 50.000</div>
-                    </div>
-
-                    <!-- Top up balance -->
-                    <div class="transaction-item flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="transaction-icon income">+</div>
-                            <div>
-                                <div class="font-medium text-gray-800">{{ session('locale') == 'en' ? 'Top up balance' : 'Top up saldo' }}</div>
-                                <div class="text-sm text-gray-500">25 Mar 2024</div>
-                            </div>
-                        </div>
-                        <div class="amount-income font-semibold">+Rp 110.000</div>
-                    </div>
-                </div>
-            </div>
+            @endforeach
         </div>
     </div>
 
@@ -314,18 +230,37 @@
             // Search functionality
             const searchInput = document.getElementById('searchInput');
             const transactionItems = document.querySelectorAll('.transaction-item');
+            let searchTimeout;
             
             searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
                 const searchTerm = this.value.toLowerCase();
                 
-                transactionItems.forEach(item => {
-                    const transactionText = item.textContent.toLowerCase();
-                    if (transactionText.includes(searchTerm)) {
+                if (searchTerm.length < 2) {
+                    // Show all items if search term is too short
+                    transactionItems.forEach(item => {
                         item.style.display = 'flex';
-                    } else {
-                        item.style.display = 'none';
-                    }
-                });
+                    });
+                    return;
+                }
+                
+                // Add loading state
+                searchInput.classList.add('opacity-50');
+                
+                searchTimeout = setTimeout(() => {
+                    // Search in transaction titles
+                    transactionItems.forEach(item => {
+                        const title = item.querySelector('.font-medium').textContent.toLowerCase();
+                        if (title.includes(searchTerm)) {
+                            item.style.display = 'flex';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                    
+                    // Remove loading state
+                    searchInput.classList.remove('opacity-50');
+                }, 300); // Debounce search for 300ms
             });
         });
     </script>

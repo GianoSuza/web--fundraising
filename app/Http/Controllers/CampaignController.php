@@ -4,106 +4,99 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Http;
+use Google\Cloud\Core\Timestamp;
 
 class CampaignController extends Controller
 {
+    private $supabaseUrl;
+    private $supabaseKey;
+
+    public function __construct()
+    {
+        $this->supabaseUrl = env('SUPABASE_URL');
+        $this->supabaseKey = env('SUPABASE_KEY');
+    }
+
     public function detail($id)
     {
-        // Simulasi data campaign berdasarkan ID
-        $campaigns = [
-            1 => [
-                'id' => 1,
-                'title' => 'Bantu Korban Banjir Jakarta',
-                'description' => 'Banjir besar melanda Jakarta dan sekitarnya. Ribuan keluarga kehilangan tempat tinggal dan membutuhkan bantuan segera untuk kebutuhan dasar seperti makanan, air bersih, dan tempat tinggal sementara.',
-                'category' => 'Bencana Alam',
-                'image' => 'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=800&h=600&fit=crop',
-                'target' => 20000000,
-                'collected' => 15000000,
-                'progress' => 75,
-                'location' => 'Jakarta',
-                'days_left' => 15,
-                'views' => 1250,
-                'organizer' => [
-                    'name' => 'Sakie.Helpin',
-                    'avatar' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-                    'verified' => true
-                ],
-                'story' => 'Banjir yang melanda Jakarta pada minggu ini telah menyebabkan ribuan keluarga kehilangan tempat tinggal. Mereka sangat membutuhkan bantuan untuk kebutuhan dasar seperti makanan, air bersih, pakaian, dan tempat tinggal sementara. Setiap donasi yang Anda berikan akan langsung disalurkan kepada korban banjir melalui relawan terpercaya di lapangan.',
-                'updates' => [
-                    [
-                        'date' => '2024-04-05',
-                        'title' => 'Distribusi bantuan hari ke-3',
-                        'content' => 'Hari ini tim relawan berhasil mendistribusikan 500 paket makanan dan 200 botol air mineral kepada korban banjir di wilayah Kemang.'
-                    ],
-                    [
-                        'date' => '2024-04-04',
-                        'title' => 'Bantuan logistik tiba',
-                        'content' => 'Alhamdulillah bantuan berupa makanan siap saji dan air bersih telah tiba di posko utama. Terima kasih untuk semua donatur yang telah membantu.'
-                    ]
-                ]
-            ],
-            2 => [
-                'id' => 2,
-                'title' => 'Operasi Jantung Anak',
-                'description' => 'Anak berusia 8 tahun membutuhkan operasi jantung segera. Keluarga tidak mampu membiayai operasi yang membutuhkan biaya sangat besar ini.',
-                'category' => 'Medis',
-                'image' => 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop',
-                'target' => 20000000,
-                'collected' => 8500000,
-                'progress' => 42,
-                'location' => 'Surabaya',
-                'days_left' => 30,
-                'views' => 890,
-                'organizer' => [
-                    'name' => 'Yayasan Peduli Anak',
-                    'avatar' => 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
-                    'verified' => true
-                ],
-                'story' => 'Adik kecil bernama Budi berusia 8 tahun menderita penyakit jantung bawaan yang memerlukan operasi segera. Keluarga Budi adalah keluarga sederhana yang tidak mampu membiayai operasi yang membutuhkan biaya puluhan juta rupiah. Bantuan Anda sangat berarti untuk menyelamatkan nyawa Budi.',
-                'updates' => [
-                    [
-                        'date' => '2024-04-03',
-                        'title' => 'Konsultasi dengan dokter spesialis',
-                        'content' => 'Budi telah menjalani konsultasi dengan dokter spesialis jantung anak. Dokter menyatakan operasi harus segera dilakukan dalam 2 bulan ke depan.'
-                    ]
-                ]
-            ],
-            3 => [
-                'id' => 3,
-                'title' => 'Bantuan Pendidikan Anak Yatim',
-                'description' => 'Program beasiswa untuk anak-anak yatim agar dapat melanjutkan pendidikan hingga jenjang yang lebih tinggi.',
-                'category' => 'Duafa',
-                'image' => 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop',
-                'target' => 20000000,
-                'collected' => 12000000,
-                'progress' => 60,
-                'location' => 'Bandung',
-                'days_left' => 45,
-                'views' => 2100,
-                'organizer' => [
-                    'name' => 'Rumah Yatim Indonesia',
-                    'avatar' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
-                    'verified' => true
-                ],
-                'story' => 'Pendidikan adalah hak setiap anak, termasuk anak-anak yatim. Program ini bertujuan memberikan beasiswa pendidikan untuk 50 anak yatim agar mereka dapat melanjutkan sekolah dan meraih cita-cita mereka. Dengan bantuan Anda, mereka dapat memiliki masa depan yang lebih cerah.',
-                'updates' => [
-                    [
-                        'date' => '2024-04-01',
-                        'title' => 'Penyaluran beasiswa semester ini',
-                        'content' => '25 anak yatim telah menerima beasiswa untuk semester ini. Mereka sangat antusias untuk kembali bersekolah.'
-                    ]
-                ]
-            ]
-        ];
+        try {
+            // Get donation data from Firestore with timeout
+            $firestore = app('firebase.firestore');
+            $donationRef = $firestore->database()->collection('donations')->document($id);
+            
+            // Add timeout to prevent hanging
+            $donation = $donationRef->snapshot(['timeout' => 5000]);
 
-        // Ambil data campaign berdasarkan ID
-        $campaign = $campaigns[$id] ?? null;
+            if (!$donation->exists()) {
+                return redirect()->route('dashboard')->with('error', 'Campaign not found');
+            }
 
-        if (!$campaign) {
-            return redirect()->route('dashboard')->with('error', 'Campaign not found');
+            $data = $donation->data();
+            
+            // Calculate days left
+            $finishDate = $data['finishDate']->get();
+            $now = new \DateTime();
+            $daysLeft = $finishDate->diff($now)->days;
+
+            // Get organizer data with timeout
+            $organizerRef = $firestore->database()->collection('users')->document($data['uid']);
+            $organizer = $organizerRef->snapshot(['timeout' => 5000]);
+            $organizerData = $organizer->exists() ? $organizer->data() : null;
+
+            // Format campaign data
+            $campaign = [
+                'id' => $id,
+                'title' => $data['name'],
+                'description' => $data['description'],
+                'category' => $data['category'],
+                'image' => !empty($data['imageUrls']) ? $data['imageUrls'][0] : 'images/default-campaign.jpg',
+                'target' => $data['target'],
+                'collected' => $data['progress'] ?? 0,
+                'progress' => isset($data['progress'], $data['target']) 
+                    ? round(($data['progress'] / $data['target']) * 100) 
+                    : 0,
+                'location' => $data['location'] ?? 'Indonesia',
+                'days_left' => $daysLeft,
+                'views' => $data['views'] ?? 0,
+                'organizer' => [
+                    'name' => $organizerData['name'] ?? 'Anonymous',
+                    'avatar' => $organizerData['photoURL'] ?? 'images/default-avatar.png',
+                    'verified' => $organizerData['verified'] ?? false
+                ],
+                'story' => $data['description'],
+                'updates' => $data['updates'] ?? []
+            ];
+
+            // Increment view count with retry mechanism
+            $maxRetries = 3;
+            $retryCount = 0;
+            $success = false;
+
+            while (!$success && $retryCount < $maxRetries) {
+                try {
+                    $donationRef->update([
+                        ['path' => 'views', 'value' => $campaign['views'] + 1]
+                    ]);
+                    $success = true;
+                } catch (\Exception $e) {
+                    $retryCount++;
+                    if ($retryCount === $maxRetries) {
+                        \Log::warning('Failed to increment view count after ' . $maxRetries . ' attempts');
+                    }
+                    usleep(100000); // Wait 100ms before retry
+                }
+            }
+
+            return view('campaigns.detail', compact('campaign'));
+        } catch (\Exception $e) {
+            \Log::error('Error fetching campaign details:', [
+                'id' => $id,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->route('dashboard')->with('error', 'Failed to load campaign details');
         }
-
-        return view('campaigns.detail', compact('campaign'));
     }
 
     public function donate($id)
@@ -114,21 +107,20 @@ class CampaignController extends Controller
 
     public function create()
     {
-        // Data untuk dropdown kategori dengan path gambar
         $categories = [
-            'duafa' => [
-                'name' => 'Duafa',
+            'Dhuafa' => [
+                'name' => 'Dhuafa',
                 'image' => 'images/duafa.png'
             ],
-            'medis' => [
-                'name' => 'Medis',
+            'Kesehatan' => [
+                'name' => 'Kesehatan',
                 'image' => 'images/medis.png'
             ],
-            'kebakaran' => [
-                'name' => 'Kebakaran',
+            'Lingkungan' => [
+                'name' => 'Lingkungan',
                 'image' => 'images/kebakaran.png'
             ],
-            'bencana_alam' => [
+            'Bencana Alam' => [
                 'name' => 'Bencana Alam',
                 'image' => 'images/bencana.png'
             ]
@@ -137,19 +129,96 @@ class CampaignController extends Controller
         return view('campaigns.create', compact('categories'));
     }
 
+    public function generateDescription(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'prompt' => 'required|string|min:10'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 422);
+        }
+
+        try {
+            $response = Http::post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyBvB3SxYh-ahWR4aCZoCWjuPDs9TPtbsJU",
+                [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                [
+                                    'text' => "You are a helpful assistant that generates compelling campaign descriptions for fundraising purposes. The descriptions should be engaging, emotional, and persuasive. Please generate a description based on this prompt: {$request->prompt}"
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            );
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return response()->json([
+                    'description' => $data['candidates'][0]['content']['parts'][0]['text'] ?? 'Failed to generate description'
+                ]);
+            }
+
+            return response()->json(['error' => 'Failed to generate description'], 500);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    private function uploadImageToSupabase($file)
+    {
+        try {
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            
+            // Create a multipart request
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->supabaseKey,
+            ])->attach(
+                'file', // The name of the file field
+                file_get_contents($file->getRealPath()), // The file contents
+                $fileName, // The file name
+                ['Content-Type' => $file->getMimeType()] // The headers as an array
+            )->post(
+                "{$this->supabaseUrl}/storage/v1/object/donation-images/{$fileName}"
+            );
+
+            if ($response->successful()) {
+                return "{$this->supabaseUrl}/storage/v1/object/public/donation-images/{$fileName}";
+            }
+
+            \Log::error('Supabase upload failed:', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+            
+            throw new \Exception('Failed to upload image to Supabase: ' . $response->body());
+        } catch (\Exception $e) {
+            \Log::error('Image upload error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+    }
+
     public function store(Request $request)
     {
-        // Validasi input
+        // Log the incoming request data
+        \Log::info('Campaign creation request:', $request->all());
+
         $validator = Validator::make($request->all(), [
             'donation_name' => 'required|string|max:255',
             'target_value' => 'required|string',
-            'category' => 'required|string|in:duafa,medis,kebakaran,bencana_alam',
+            'category' => 'required|string|in:Dhuafa,Kesehatan,Lingkungan,Bencana Alam',
             'description' => 'required|string|min:50',
             'finish_date' => 'required|date|after:today',
-            'campaign_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'campaign_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
         ], [
-            'donation_name.required' => 'Nama kampanye harus diisi',
-            'donation_name.max' => 'Nama kampanye tidak boleh lebih dari 255 karakter',
+            'donation_name.required' => 'Nama donasi harus diisi',
+            'donation_name.max' => 'Nama donasi tidak boleh lebih dari 255 karakter',
             'target_value.required' => 'Target nilai harus diisi',
             'category.required' => 'Kategori harus dipilih',
             'category.in' => 'Kategori yang dipilih tidak valid',
@@ -158,44 +227,90 @@ class CampaignController extends Controller
             'finish_date.required' => 'Tanggal selesai harus diisi',
             'finish_date.date' => 'Format tanggal tidak valid',
             'finish_date.after' => 'Tanggal selesai harus setelah hari ini',
+            'campaign_image.required' => 'Gambar harus diupload',
             'campaign_image.image' => 'File harus berupa gambar',
             'campaign_image.mimes' => 'Gambar harus berformat jpeg, png, jpg, atau gif',
             'campaign_image.max' => 'Ukuran gambar tidak boleh lebih dari 2MB'
         ]);
 
         if ($validator->fails()) {
+            \Log::error('Validation failed:', $validator->errors()->toArray());
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        // Konversi target value dari format currency ke angka
-        $targetValue = str_replace(['.', ','], '', $request->target_value);
-        $targetValue = (int) $targetValue;
+        try {
+            // Upload image to Supabase with retry mechanism
+            $maxRetries = 3;
+            $retryCount = 0;
+            $imageUrl = null;
 
-        // Validasi minimum target value
-        if ($targetValue < 100000) {
-            return redirect()->back()->withErrors(['target_value' => 'Target nilai minimal Rp 100.000'])->withInput();
+            while ($imageUrl === null && $retryCount < $maxRetries) {
+                try {
+                    $imageUrl = $this->uploadImageToSupabase($request->file('campaign_image'));
+                    \Log::info('Image uploaded successfully:', ['url' => $imageUrl]);
+                } catch (\Exception $e) {
+                    $retryCount++;
+                    if ($retryCount === $maxRetries) {
+                        throw $e;
+                    }
+                    usleep(100000); // Wait 100ms before retry
+                }
+            }
+
+            // Get user data from session
+            $userData = session('user_data');
+            if (!$userData) {
+                \Log::error('User data not found in session');
+                return redirect()->back()->with('error', 'User data not found')->withInput();
+            }
+
+            // Convert target value from currency format to integer
+            $targetValue = (int) str_replace(['.', ','], '', $request->target_value);
+            \Log::info('Target value converted:', ['original' => $request->target_value, 'converted' => $targetValue]);
+
+            // Create donation data
+            $donationData = [
+                'name' => $request->donation_name,
+                'target' => $targetValue,
+                'category' => $request->category,
+                'description' => $request->description,
+                'finishDate' => new Timestamp(new \DateTime($request->finish_date)),
+                'imageUrls' => [$imageUrl],
+                'uid' => $userData['uid'],
+                'createdAt' => new Timestamp(new \DateTime()),
+                'progress' => 0,
+                'organization' => $userData['name'],
+                'views' => 0
+            ];
+
+            \Log::info('Saving donation data to Firestore:', $donationData);
+
+            // Save to Firestore with retry mechanism
+            $firestore = app('firebase.firestore');
+            $maxRetries = 3;
+            $retryCount = 0;
+            $result = null;
+
+            while ($result === null && $retryCount < $maxRetries) {
+                try {
+                    $result = $firestore->database()->collection('donations')->add($donationData);
+                    \Log::info('Donation saved successfully:', ['id' => $result->id()]);
+                } catch (\Exception $e) {
+                    $retryCount++;
+                    if ($retryCount === $maxRetries) {
+                        throw $e;
+                    }
+                    usleep(100000); // Wait 100ms before retry
+                }
+            }
+            
+            return redirect()->route('dashboard')->with('success', 'Donation campaign created successfully!');
+        } catch (\Exception $e) {
+            \Log::error('Error creating donation:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->with('error', 'Failed to create donation campaign: ' . $e->getMessage())->withInput();
         }
-
-        // Logic untuk menyimpan campaign
-        // Dalam implementasi nyata, simpan ke database
-        // 
-        // if ($request->hasFile('campaign_image')) {
-        //     $imagePath = $request->file('campaign_image')->store('campaigns', 'public');
-        // }
-        // 
-        // Campaign::create([
-        //     'title' => $request->donation_name,
-        //     'target' => $targetValue,
-        //     'category' => $request->category,
-        //     'description' => $request->description,
-        //     'finish_date' => $request->finish_date,
-        //     'image' => $imagePath ?? null,
-        //     'user_id' => Auth::id(),
-        //     'status' => 'pending' // untuk review admin
-        // ]);
-
-        $successMessage = 'Kampanye berhasil dibuat! Akan ditinjau oleh tim kami.';
-
-        return redirect()->route('dashboard')->with('success', $successMessage);
     }
 }

@@ -7,88 +7,92 @@ use Illuminate\Support\Facades\Validator;
 
 class DonateController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, $campaignId)
     {
-        $campaignId = $request->get('campaign_id');
-        
         if (!$campaignId) {
             return redirect()->route('dashboard')->with('error', 'Campaign not found');
         }
 
-        // Simulasi data campaign - make sure this matches the CampaignController data
-        $campaigns = [
-            1 => [
-                'id' => 1,
-                'title' => 'Bantu Korban Banjir Jakarta',
-                'image' => 'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=800&h=600&fit=crop',
-                'target' => 20000000,
-                'collected' => 15000000,
-            ],
-            2 => [
-                'id' => 2,
-                'title' => 'Operasi Jantung Anak',
-                'image' => 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop',
-                'target' => 20000000,
-                'collected' => 8500000,
-            ],
-            3 => [
-                'id' => 3,
-                'title' => 'Bantuan Pendidikan Anak Yatim',
-                'image' => 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop',
-                'target' => 20000000,
-                'collected' => 12000000,
-            ]
-        ];
+        try {
+            // Get Firestore instance
+            $firestore = app('firebase.firestore');
+            $db = $firestore->database();
 
-        $campaign = $campaigns[$campaignId] ?? null;
-        
-        if (!$campaign) {
-            return redirect()->route('dashboard')->with('error', 'Campaign not found');
+            // Get campaign data from Firestore
+            $donationRef = $db->collection('donations')->document($campaignId);
+            $donation = $donationRef->snapshot();
+
+            if (!$donation->exists()) {
+                return redirect()->route('dashboard')->with('error', 'Campaign not found');
+            }
+
+            $donationData = $donation->data();
+            
+            // Format campaign data
+            $campaign = [
+                'id' => $campaignId,
+                'title' => $donationData['name'] ?? 'Untitled Campaign',
+                'image' => $donationData['imageUrls'][0] ?? 'https://via.placeholder.com/800x600',
+                'target' => $donationData['target'] ?? 0,
+                'collected' => $donationData['progress'] ?? 0,
+            ];
+
+            // Get user data from session
+            $userData = session('user_data');
+            if (!$userData) {
+                return redirect()->route('dashboard')->with('error', 'User data not found');
+            }
+
+            // Get user balance from session
+            $userBalance = $userData['saldo'] ?? 0;
+
+            // Quick amount options
+            $quickAmounts = [10000, 50000, 100000, 150000, 200000, 250000];
+
+            // Payment methods
+            $paymentMethods = [
+                [
+                    'id' => 'bca',
+                    'name' => 'Bank Central Asia',
+                    'code' => 'BCA',
+                    'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bank_Central_Asia.svg/1598px-Bank_Central_Asia.svg.png?20200318082802'
+                ],
+                [
+                    'id' => 'mandiri',
+                    'name' => 'Mandiri',
+                    'code' => 'MANDIRI',
+                    'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Bank_Mandiri_logo_2016.svg/200px-Bank_Mandiri_logo_2016.svg.png'
+                ],
+                [
+                    'id' => 'bri',
+                    'name' => 'BRI',
+                    'code' => 'BRI',
+                    'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/BANK_BRI_logo.svg/200px-BANK_BRI_logo.svg.png'
+                ],
+                [
+                    'id' => 'qris',
+                    'name' => 'QRIS',
+                    'code' => 'QRIS',
+                    'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/QRIS_logo.svg/768px-QRIS_logo.svg.png?20201215043119'
+                ]
+            ];
+
+            return view('donate', compact('campaign', 'quickAmounts', 'paymentMethods', 'userBalance'));
+        } catch (\Exception $e) {
+            \Log::error('Error fetching campaign details:', [
+                'id' => $campaignId,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->route('dashboard')->with('error', 'Failed to load campaign details');
         }
-
-        // Quick amount options
-        $quickAmounts = [10000, 50000, 100000, 150000, 200000, 250000];
-
-        // Payment methods
-        $paymentMethods = [
-            [
-                'id' => 'bca',
-                'name' => 'Bank Central Asia',
-                'logo' => 'https://upload.wikimedia.org/wikipedia/id/thumb/5/5c/Bank_Central_Asia.svg/200px-Bank_Central_Asia.svg.png'
-            ],
-            [
-                'id' => 'mandiri',
-                'name' => 'Mandiri',
-                'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Bank_Mandiri_logo_2016.svg/200px-Bank_Mandiri_logo_2016.svg.png'
-            ],
-            [
-                'id' => 'bri',
-                'name' => 'BRI',
-                'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/BANK_BRI_logo.svg/200px-BANK_BRI_logo.svg.png'
-            ],
-            [
-                'id' => 'qris',
-                'name' => 'QRIS',
-                'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/QRIS_logo.svg/200px-QRIS_logo.svg.png'
-            ],
-            [
-                'id' => 'balance',
-                'name' => 'Saldo Bantu.In',
-                'logo' => null
-            ]
-        ];
-
-        // User balance (simulasi)
-        $userBalance = 500000;
-
-        return view('donate', compact('campaign', 'quickAmounts', 'paymentMethods', 'userBalance'));
     }
 
     public function process(Request $request)
     {
         // Validasi input
         $validator = Validator::make($request->all(), [
-            'campaign_id' => 'required|integer',
+            'campaign_id' => 'required|string',
             'amount' => 'required|numeric|min:10000',
             'payment_method' => 'required|string',
         ], [
@@ -103,115 +107,139 @@ class DonateController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        // Jika payment method adalah saldo, langsung ke success
-        if ($request->payment_method === 'balance') {
-            // TODO: Di sini bisa ditambahkan logic untuk mengurangi saldo user
-            // Auth::user()->balance -= $request->amount;
-            // Auth::user()->save();
-            
-            return redirect()->route('donate.success');
+        // Store donation data in session for instruction page
+        session([
+            'donation_data' => [
+                'campaign_id' => $request->campaign_id,
+                'amount' => $request->amount,
+                'payment_method' => $request->payment_method,
+                'type' => 'donation'
+            ]
+        ]);
+
+        return redirect()->route('donate.instruction');
+    }
+
+    public function confirmPayment(Request $request)
+    {
+        // Get donation data from session
+        $donationData = session('donation_data');
+        
+        if (!$donationData) {
+            return redirect()->route('dashboard')->with('error', 'Invalid donation data');
         }
 
-        // Untuk payment method lainnya (bank transfer, QRIS), redirect ke halaman instruksi
-        return redirect()->route('donate.instruction', [
-            'campaign_id' => $request->campaign_id,
-            'amount' => $request->amount,
-            'method' => $request->payment_method
-        ]);
+        try {
+            // Get Firestore instance
+            $firestore = app('firebase.firestore');
+            $db = $firestore->database();
+
+            // Get user data from session
+            $userData = session('user_data');
+            if (!$userData) {
+                return redirect()->route('dashboard')->with('error', 'User data not found');
+            }
+
+            // Get campaign data
+            $donationRef = $db->collection('donations')->document($donationData['campaign_id']);
+            $donation = $donationRef->snapshot();
+
+            if (!$donation->exists()) {
+                return redirect()->route('dashboard')->with('error', 'Campaign not found');
+            }
+
+            $donationData = $donation->data();
+            $currentProgress = $donationData['progress'] ?? 0;
+            $newProgress = $currentProgress + $donationData['amount'];
+
+            // Update campaign progress
+            $donationRef->update([
+                ['path' => 'progress', 'value' => $newProgress]
+            ]);
+
+            // Create transaction record
+            $transactionRef = $db->collection('transactions')->add([
+                'userId' => $userData['uid'],
+                'campaignId' => $donationData['campaign_id'],
+                'amount' => $donationData['amount'],
+                'type' => 'donation',
+                'status' => 'success',
+                'paymentMethod' => $donationData['payment_method'],
+                'createdAt' => \Google\Cloud\Core\Timestamp::fromDateTime(new \DateTime())
+            ]);
+
+            // Clear donation data from session
+            session()->forget('donation_data');
+
+            return redirect()->route('donate.success');
+        } catch (\Exception $e) {
+            \Log::error('Error processing donation:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->route('dashboard')->with('error', 'Failed to process donation');
+        }
     }
 
     public function instruction(Request $request)
     {
-        $campaignId = $request->get('campaign_id');
-        $amount = $request->get('amount');
-        $selectedMethod = $request->get('method');
-
-        // Validasi parameter
-        if (!$amount || !$selectedMethod || !$campaignId) {
-            return redirect()->route('donate', ['campaign_id' => $campaignId])->with('error', 'Invalid payment data');
+        // Get donation data from session
+        $donationData = session('donation_data');
+        
+        if (!$donationData) {
+            return redirect()->route('dashboard')->with('error', 'Invalid donation data');
         }
 
-        // Validasi metode pembayaran yang valid
-        $validMethods = ['bca', 'mandiri', 'bri', 'qris', 'balance'];
-        if (!in_array($selectedMethod, $validMethods)) {
-            return redirect()->route('donate', ['campaign_id' => $campaignId])->with('error', 'Invalid payment method');
+        try {
+            // Get Firestore instance
+            $firestore = app('firebase.firestore');
+            $db = $firestore->database();
+
+            // Get campaign data
+            $donationRef = $db->collection('donations')->document($donationData['campaign_id']);
+            $donation = $donationRef->snapshot();
+
+            if (!$donation->exists()) {
+                return redirect()->route('dashboard')->with('error', 'Campaign not found');
+            }
+
+            $donationData['campaign'] = [
+                'id' => $donationData['campaign_id'],
+                'title' => $donation->data()['name'] ?? 'Untitled Campaign',
+                'image' => $donation->data()['imageUrls'][0] ?? 'https://via.placeholder.com/800x600',
+            ];
+
+            // Payment methods data
+            $paymentMethods = [
+                'bca' => [
+                    'name' => 'Bank Central Asia',
+                    'account' => '1234567890',
+                    'holder' => 'PT Bantu Indonesia'
+                ],
+                'mandiri' => [
+                    'name' => 'Bank Mandiri',
+                    'account' => '9876543210',
+                    'holder' => 'PT Bantu Indonesia'
+                ],
+                'bri' => [
+                    'name' => 'Bank Rakyat Indonesia',
+                    'account' => '5555666677',
+                    'holder' => 'PT Bantu Indonesia'
+                ]
+            ];
+
+            // Get selected payment method details
+            $selectedMethod = $paymentMethods[$donationData['payment_method']] ?? null;
+
+            return view('donate.instruction', compact('donationData', 'selectedMethod'));
+        } catch (\Exception $e) {
+            \Log::error('Error loading instruction page:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->route('dashboard')->with('error', 'Failed to load instruction page');
         }
-
-        // Simulasi data campaign
-        $campaigns = [
-            1 => [
-                'id' => 1,
-                'title' => 'Bantu Korban Banjir Jakarta',
-                'image' => 'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=800&h=600&fit=crop',
-            ],
-            2 => [
-                'id' => 2,
-                'title' => 'Operasi Jantung Anak',
-                'image' => 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop',
-            ],
-            3 => [
-                'id' => 3,
-                'title' => 'Bantuan Pendidikan Anak Yatim',
-                'image' => 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop',
-        ]
-    ];
-
-    $campaign = $campaigns[$campaignId] ?? null;
-    
-    if (!$campaign) {
-        return redirect()->route('dashboard')->with('error', 'Campaign not found');
     }
-
-    // Data untuk metode pembayaran
-    $paymentMethods = [
-        [
-            'id' => 'bca',
-            'name' => 'Bank Central Asia',
-            'logo' => 'https://upload.wikimedia.org/wikipedia/id/thumb/5/5c/Bank_Central_Asia.svg/200px-Bank_Central_Asia.svg.png'
-        ],
-        [
-            'id' => 'mandiri',
-            'name' => 'Mandiri',
-            'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Bank_Mandiri_logo_2016.svg/200px-Bank_Mandiri_logo_2016.svg.png'
-        ],
-        [
-            'id' => 'bri',
-            'name' => 'BRI',
-            'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/BANK_BRI_logo.svg/200px-BANK_BRI_logo.svg.png'
-        ],
-        [
-            'id' => 'qris',
-            'name' => 'QRIS',
-            'logo' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/QRIS_logo.svg/200px-QRIS_logo.svg.png'
-        ],
-        [
-            'id' => 'balance',
-            'name' => 'Saldo Bantu.In',
-            'logo' => null
-        ]
-    ];
-
-    // Data bank details
-    $bankDetails = [
-        'bca' => [
-            'name' => 'Bank Central Asia',
-            'account' => '1234567890',
-            'holder' => 'PT Bantu Indonesia'
-        ],
-        'mandiri' => [
-            'name' => 'Bank Mandiri',
-            'account' => '9876543210',
-            'holder' => 'PT Bantu Indonesia'
-        ],
-        'bri' => [
-            'name' => 'Bank Rakyat Indonesia',
-            'account' => '5555666677',
-            'holder' => 'PT Bantu Indonesia'
-        ]
-    ];
-
-    return view('donate.instruction', compact('campaign', 'amount', 'selectedMethod', 'paymentMethods', 'bankDetails'));
-}
 
     public function success()
     {

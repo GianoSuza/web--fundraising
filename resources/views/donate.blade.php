@@ -71,22 +71,13 @@
             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
         }
         
-        /* Campaign Image */
-        .campaign-image {
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Amount Input */
+        /* Custom Input Styles */
         .amount-input {
-            background-color: #F3F4F6;
-            border-radius: 12px;
-            padding: 16px 20px;
             font-size: 24px;
             font-weight: 600;
-            text-align: center;
-            border: none;
+            background-color: #F3F4F6;
+            border-radius: 8px;
+            padding: 12px 16px;
             transition: all 0.3s ease;
         }
         
@@ -97,104 +88,55 @@
         
         .amount-input:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.3);
+            box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.3);
         }
         
-        /* Quick Amount Buttons */
+        /* Quick Amount Button Styles */
         .quick-amount {
-            background-color: #F3F4F6;
-            border: none;
+            border: 1px solid #E5E7EB;
             border-radius: 8px;
-            padding: 8px 16px;
+            padding: 8px 12px;
             font-size: 14px;
             font-weight: 500;
             transition: all 0.2s ease;
-            cursor: pointer;
         }
         
         .quick-amount:hover {
-            background-color: #4ECDC4;
-            color: white;
+            border-color: #4ECDC4;
+            color: #4ECDC4;
         }
         
         .dark .quick-amount {
-            background-color: #374151;
-            color: #d1d5db;
+            border-color: #4B5563;
         }
         
         .dark .quick-amount:hover {
-            background-color: #4ECDC4;
-            color: white;
+            border-color: #4ECDC4;
         }
         
-        /* Payment Method Selector */
-        .payment-selector {
-            background-color: #F3F4F6;
-            border-radius: 12px;
-            padding: 16px 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-        }
-        
-        .dark .payment-selector {
-            background-color: #374151;
-        }
-        
-        .payment-selector:hover {
-            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.3);
-        }
-        
-        /* Payment Methods List */
-        .payment-methods {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            margin-top: 8px;
-            overflow: hidden;
-            max-height: 0;
-            opacity: 0;
-            transition: all 0.3s ease;
-        }
-        
-        .payment-methods.show {
-            max-height: 400px;
-            opacity: 1;
-        }
-        
-        .dark .payment-methods {
-            background-color: #1f2937;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-        
+        /* Payment Method Styles */
         .payment-method {
-            padding: 16px 20px;
-            border-bottom: 1px solid #F3F4F6;
-            cursor: pointer;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 16px;
             transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: between;
-        }
-        
-        .dark .payment-method {
-            border-bottom: 1px solid #374151;
-        }
-        
-        .payment-method:last-child {
-            border-bottom: none;
+            cursor: pointer;
         }
         
         .payment-method:hover {
-            background-color: rgba(78, 205, 196, 0.05);
+            border-color: #4ECDC4;
+        }
+        
+        .dark .payment-method {
+            border-color: #4B5563;
         }
         
         .payment-method.selected {
-            background-color: rgba(78, 205, 196, 0.1);
+            border-color: #4ECDC4;
+            background-color: rgba(78, 205, 196, 0.05);
         }
         
-        /* Radio Button */
-        .radio-button {
+        .payment-radio {
             width: 20px;
             height: 20px;
             border: 2px solid #D1D5DB;
@@ -202,14 +144,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-left: auto;
+            transition: all 0.2s ease;
         }
         
-        .radio-button.selected {
+        .payment-radio.selected {
             border-color: #4ECDC4;
         }
         
-        .radio-button.selected::after {
+        .payment-radio.selected::after {
             content: "";
             width: 12px;
             height: 12px;
@@ -217,79 +159,108 @@
             border-radius: 50%;
         }
         
-        /* Continue Button */
-        .continue-btn {
+        /* Submit Button Styles */
+        .submit-btn {
             background: linear-gradient(135deg, #4ECDC4 0%, #45B7AA 100%);
             border-radius: 12px;
-            padding: 16px 32px;
+            padding: 16px;
             font-weight: 600;
             transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
         }
         
-        .continue-btn:hover {
+        .submit-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
         }
         
-        .continue-btn:disabled {
+        .submit-btn:disabled {
             opacity: 0.7;
             transform: none;
             box-shadow: none;
-            cursor: not-allowed;
+        }
+
+        /* Campaign Info Styles */
+        .campaign-info {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark .campaign-info {
+            background: #1f2937;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .campaign-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 16px;
         }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen transition-colors duration-300">
     <!-- Header -->
-    <div class="bg-white shadow-sm px-4 py-4 flex items-center justify-between transition-colors duration-300">
-        <div class="flex items-center">
-            <a href="{{ route('campaign.detail', $campaign['id']) }}" class="p-2 hover:bg-gray-100 rounded-full transition-colors mr-2">
-                <i class="fas fa-arrow-left text-gray-600 text-xl"></i>
-            </a>
-            <h1 class="text-xl font-semibold text-gray-800">{{ session('locale') == 'en' ? 'Details' : 'Detail' }}</h1>
-        </div>
-        <button class="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <i class="fas fa-heart text-gray-400 text-xl hover:text-red-500"></i>
-        </button>
+    <div class="bg-white shadow-sm px-4 py-4 flex items-center justify-center relative transition-colors duration-300">
+        <a href="{{ route('campaign.detail', $campaign['id']) }}" class="absolute left-4 p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <i class="fas fa-arrow-left text-gray-600 text-xl"></i>
+        </a>
+        <h1 class="text-xl font-semibold text-gray-800">{{ session('locale') == 'en' ? 'Donate' : 'Donasi' }}</h1>
     </div>
 
-    <div class="container mx-auto px-4 py-6 max-w-md">
-        <!-- Campaign Image -->
-        <div class="campaign-image mb-6">
-            <img src="{{ $campaign['image'] }}" alt="{{ $campaign['title'] }}" class="w-full h-48 object-cover">
+    <div class="container mx-auto px-4 py-8 max-w-md">
+        <!-- Error Messages -->
+        @if($errors->any())
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <ul class="list-disc list-inside">
+                @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        <!-- Campaign Info -->
+        <div class="campaign-info">
+            <img src="{{ $campaign['image'] }}" alt="{{ $campaign['title'] }}" class="campaign-image">
+            <h2 class="text-lg font-semibold text-gray-800 mb-2">{{ $campaign['title'] }}</h2>
+            <div class="flex justify-between items-center text-sm text-gray-600">
+                <span>{{ session('locale') == 'en' ? 'Target:' : 'Target:' }} Rp {{ number_format($campaign['target'], 0, ',', '.') }}</span>
+                <span>{{ session('locale') == 'en' ? 'Collected:' : 'Terkumpul:' }} Rp {{ number_format($campaign['collected'], 0, ',', '.') }}</span>
+            </div>
         </div>
 
         <form action="{{ route('donate.process') }}" method="POST" id="donateForm">
             @csrf
             <input type="hidden" name="campaign_id" value="{{ $campaign['id'] }}">
             
-            <!-- Fill the nominal -->
-            <div class="mb-6">
-                <h2 class="text-lg font-medium text-gray-800 mb-4 text-center">{{ session('locale') == 'en' ? 'Fill the nominal' : 'Isi nominal' }}</h2>
-                
+            <!-- Amount Input Section -->
+            <div class="mb-8">
+                <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">{{ session('locale') == 'en' ? 'Donation Amount' : 'Jumlah Donasi' }}</label>
                 <div class="flex items-center amount-input mb-4">
                     <span class="text-gray-500 mr-2">Rp</span>
                     <input 
                         type="text" 
                         name="amount" 
                         id="amount" 
-                        value="200.000"
-                        class="bg-transparent border-none w-full focus:outline-none text-center"
+                        value="{{ old('amount', '100000') }}"
+                        class="bg-transparent border-none w-full focus:outline-none"
                         inputmode="numeric"
                     >
                 </div>
                 
                 <!-- Quick Amount Buttons -->
-                <div class="grid grid-cols-3 gap-3 mb-6">
+                <div class="grid grid-cols-3 gap-3">
                     @foreach($quickAmounts as $amount)
                     <button 
                         type="button" 
-                        class="quick-amount"
+                        class="quick-amount text-gray-700"
                         data-amount="{{ $amount }}"
                     >
-                        Rp {{ number_format($amount / 1000) }}.000
+                        Rp {{ number_format($amount, 0, ',', '.') }}
                     </button>
                     @endforeach
                 </div>
@@ -297,42 +268,49 @@
 
             <!-- Payment Method Section -->
             <div class="mb-8">
-                <div class="payment-selector flex items-center justify-between" id="paymentSelector">
-                    <span class="text-gray-700" id="selectedPaymentText">{{ session('locale') == 'en' ? 'Select Payment Method' : 'Pilih Metode Pembayaran' }}</span>
-                    <i class="fas fa-chevron-down text-gray-400 transition-transform" id="chevronIcon"></i>
-                </div>
+                <h2 class="text-lg font-medium text-gray-800 mb-4">{{ session('locale') == 'en' ? 'Select Payment Method' : 'Pilih Metode Pembayaran' }}</h2>
                 
-                <!-- Payment Methods List -->
-                <div class="payment-methods" id="paymentMethods">
+                <div class="space-y-3">
                     @foreach($paymentMethods as $method)
-                    <div class="payment-method" data-method="{{ $method['id'] }}" data-name="{{ $method['name'] }}">
+                    <div class="payment-method flex items-center justify-between" data-method="{{ $method['id'] }}">
                         <div class="flex items-center">
                             @if($method['logo'])
-                            <img src="{{ $method['logo'] }}" alt="{{ $method['name'] }}" class="h-6 w-auto mr-3 object-contain">
-                            @else
-                            <div class="w-6 h-6 bg-custom-teal rounded mr-3 flex items-center justify-center">
-                                <i class="fas fa-wallet text-white text-xs"></i>
-                            </div>
+                            <img 
+                                src="{{ $method['logo'] }}" 
+                                alt="{{ $method['name'] }}" 
+                                class="h-8 w-auto mr-3 object-contain"
+                            >
                             @endif
                             <span class="font-medium text-gray-800">{{ $method['name'] }}</span>
-                            @if($method['id'] == 'balance')
-                            <span class="text-sm text-gray-500 ml-2">(Rp {{ number_format($userBalance, 0, ',', '.') }})</span>
-                            @endif
                         </div>
-                        <div class="radio-button"></div>
-                        <input type="radio" name="payment_method" value="{{ $method['id'] }}" class="hidden">
+                        <div class="payment-radio {{ $method['id'] == 'balance' ? 'selected' : '' }}"></div>
+                        <input 
+                            type="radio" 
+                            name="payment_method" 
+                            value="{{ $method['id'] }}" 
+                            class="hidden"
+                            {{ $method['id'] == 'balance' ? 'checked' : '' }}
+                        >
                     </div>
                     @endforeach
                 </div>
             </div>
 
-            <!-- Continue Button -->
+            <!-- Balance Info -->
+            <div class="bg-gray-50 rounded-lg p-4 mb-8">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">{{ session('locale') == 'en' ? 'Your Balance:' : 'Saldo Anda:' }}</span>
+                    <span class="font-semibold text-gray-800">Rp {{ number_format($userBalance, 0, ',', '.') }}</span>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
             <button 
                 type="submit" 
-                class="continue-btn w-full text-white text-center"
-                id="continueBtn"
+                class="submit-btn w-full text-white text-center"
+                id="submitBtn"
             >
-                {{ session('locale') == 'en' ? 'Continue' : 'Lanjutkan' }}
+                {{ session('locale') == 'en' ? 'Donate Now' : 'Donasi Sekarang' }}
             </button>
         </form>
     </div>
@@ -351,18 +329,14 @@
                 document.body.classList.add('dark');
             }
             
+            // Format amount input with thousand separator
             const amountInput = document.getElementById('amount');
-            const paymentSelector = document.getElementById('paymentSelector');
-            const paymentMethods = document.getElementById('paymentMethods');
-            const chevronIcon = document.getElementById('chevronIcon');
-            const selectedPaymentText = document.getElementById('selectedPaymentText');
-            const continueBtn = document.getElementById('continueBtn');
             
-            let selectedPayment = null;
-            
-            // Format amount input
             function formatAmount(value) {
+                // Remove non-numeric characters
                 value = value.replace(/\D/g, '');
+                
+                // Format with thousand separator
                 if (value === '') return '';
                 return new Intl.NumberFormat('id-ID').format(value);
             }
@@ -384,104 +358,60 @@
                 
                 this.value = formattedValue;
                 
+                // Adjust cursor position after formatting
                 const newLength = this.value.length;
                 const newPosition = cursorPosition + (newLength - originalLength);
                 this.setSelectionRange(newPosition, newPosition);
             });
             
             // Quick amount buttons
-            document.querySelectorAll('.quick-amount').forEach(button => {
+            const quickAmountButtons = document.querySelectorAll('.quick-amount');
+            quickAmountButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     const amount = this.getAttribute('data-amount');
                     amountInput.value = formatAmount(amount);
                 });
             });
             
-            // Payment method selector
-            paymentSelector.addEventListener('click', function() {
-                const isOpen = paymentMethods.classList.contains('show');
-                
-                if (isOpen) {
-                    paymentMethods.classList.remove('show');
-                    chevronIcon.style.transform = 'rotate(0deg)';
-                } else {
-                    paymentMethods.classList.add('show');
-                    chevronIcon.style.transform = 'rotate(180deg)';
-                }
-            });
-            
             // Payment method selection
-            document.querySelectorAll('.payment-method').forEach(method => {
+            const paymentMethods = document.querySelectorAll('.payment-method');
+            paymentMethods.forEach(method => {
                 method.addEventListener('click', function() {
-                    const methodId = this.getAttribute('data-method');
-        
-                    // Jika memilih saldo, cek apakah saldo mencukupi
-                    if (methodId === 'balance') {
-                        const currentAmount = parseInt(unformatAmount(amountInput.value)) || 0;
-                        const userBalance = {{ $userBalance }};
-                        
-                        if (currentAmount > userBalance) {
-                            alert('{{ session('locale') == 'en' ? 'Insufficient balance. Please top up first.' : 'Saldo tidak mencukupi. Silakan top up terlebih dahulu.' }}');
-                            return;
-                        }
-                    }
-                    
                     // Remove selected class from all methods
-                    document.querySelectorAll('.payment-method').forEach(m => {
+                    paymentMethods.forEach(m => {
                         m.classList.remove('selected');
-                        m.querySelector('.radio-button').classList.remove('selected');
+                        m.querySelector('.payment-radio').classList.remove('selected');
                     });
                     
                     // Add selected class to clicked method
                     this.classList.add('selected');
-                    this.querySelector('.radio-button').classList.add('selected');
+                    this.querySelector('.payment-radio').classList.add('selected');
                     
                     // Check the radio button
                     const radio = this.querySelector('input[type="radio"]');
                     radio.checked = true;
-                    
-                    // Update selected text
-                    const methodName = this.getAttribute('data-name');
-                    selectedPaymentText.textContent = methodName;
-                    selectedPayment = methodId;
-                    
-                    // Close dropdown
-                    paymentMethods.classList.remove('show');
-                    chevronIcon.style.transform = 'rotate(0deg)';
-                    
-                    // Enable continue button
-                    continueBtn.disabled = false;
-                    
-                    // Update continue button text
-                    setTimeout(updateContinueButton, 100);
                 });
             });
-
-            // Update continue button text based on payment method
-            function updateContinueButton() {
-                if (selectedPayment === 'balance') {
-                    continueBtn.textContent = '{{ session('locale') == 'en' ? 'Donate Now' : 'Donasi Sekarang' }}';
-                } else {
-                    continueBtn.textContent = '{{ session('locale') == 'en' ? 'Continue' : 'Lanjutkan' }}';
-                }
-            }
             
             // Form submission
-            document.getElementById('donateForm').addEventListener('submit', function(e) {
+            const form = document.getElementById('donateForm');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
                 // Unformat amount before submission
                 const amount = unformatAmount(amountInput.value);
                 amountInput.value = amount;
                 
-                // Disable submit button
-                continueBtn.disabled = true;
-                continueBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>' + 
+                // Disable submit button and show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>' + 
                     (localStorage.getItem('language') === 'en' ? 'Processing...' : 'Memproses...');
                 
-                // Biarkan form submit secara normal ke donate.process
+                // Submit the form
+                this.submit();
             });
-            
-            // Initially disable continue button
-            continueBtn.disabled = true;
         });
     </script>
 </body>

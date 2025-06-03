@@ -5,9 +5,19 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Services\FirestoreService;
 
 class AuthController extends Controller
 {
+    protected $firestore;
+
+    public function __construct(FirestoreService $firestore)
+    {
+        $this->firestore = $firestore;
+    }
+
     public function showSignIn()
     {
         return view('auth.sign-in');
@@ -20,25 +30,63 @@ class AuthController extends Controller
 
     public function signIn(Request $request)
     {
-        // Validasi input
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string|min:6',
-        ], [
-            'email.required' => 'Email is required',
-            'email.email' => 'Please enter a valid email address',
-            'password.required' => 'Password is required',
-            'password.min' => 'Password must be at least 6 characters',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        // Logic untuk autentikasi user
-        // Untuk sementara, redirect ke dashboard
-        // Dalam implementasi nyata, gunakan Auth::attempt()
+        $result = $this->firestore->getUserByEmail($request->email);
+
+        if (!$result) {
+            return redirect()->back()->withErrors(['email' => 'User not found'])->withInput();
+        }
+
+        $userData = $result['data'];
+
+        if ($request->password !== $userData['password']) {
+            return redirect()->back()->withErrors(['password' => 'Invalid password'])->withInput();
+        }
+
+        // Create a temporary user object for authentication
+        $user = new class($userData, $result['id']) extends Authenticatable {
+            public $id;
+            public $name;
+            public $email;
+            public $data;
+
+            public function __construct($data, $id)
+            {
+                $this->id = $id;
+                $this->name = $data['name'] ?? '';
+                $this->email = $data['email'];
+                $this->data = $data;
+            }
+
+            public function getAuthIdentifierName()
+            {
+                return 'id';
+            }
+
+            public function getAuthIdentifier()
+            {
+                return $this->id;
+            }
+
+            public function getAuthPassword()
+            {
+                return $this->password;
+            }
+        };
+
+        Auth::login($user);
         
+        // Store user data in session
+        session(['user_data' => $userData]);
+
         return redirect()->route('dashboard')->with('success', 'Welcome back!');
     }
 
@@ -47,7 +95,7 @@ class AuthController extends Controller
         // Validasi input
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'required|email',
             'password' => 'required|string|min:6',
             'country' => 'required|string',
             'phone' => 'required|string',
@@ -57,7 +105,6 @@ class AuthController extends Controller
             'name.required' => 'Name is required',
             'email.required' => 'Email is required',
             'email.email' => 'Please enter a valid email address',
-            'email.unique' => 'This email is already registered',
             'password.required' => 'Password is required',
             'password.min' => 'Password must be at least 6 characters',
             'country.required' => 'Please select your country',
@@ -70,16 +117,66 @@ class AuthController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        // Logic untuk membuat user baru
-        // Dalam implementasi nyata, simpan ke database
-        
-        return redirect()->route('dashboard')->with('success', 'Account created successfully!');
+        // Check if email already exists
+        $existingUser = $this->firestore->getUserByEmail($request->email);
+        if ($existingUser) {
+            return redirect()->back()->withErrors(['email' => 'This email is already registered'])->withInput();
+        }
+
+        // Prepare user data
+        $userData = [
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => $request->password,
+            'saldo' => 0,
+        ];
+
+        try {
+            // Add user to Firestore
+            $result = $this->firestore->addDocument('users', $userData);
+
+            // Create a temporary user object for authentication
+            $user = new class($userData, $result->id()) extends Authenticatable {
+                public $id;
+                public $name;
+                public $email;
+
+                public function __construct($data, $id)
+                {
+                    $this->id = $id;
+                    $this->name = $data['name'];
+                    $this->email = $data['email'];
+                }
+
+                public function getAuthIdentifierName()
+                {
+                    return 'id';
+                }
+
+                public function getAuthIdentifier()
+                {
+                    return $this->id;
+                }
+
+                public function getAuthPassword()
+                {
+                    return $this->password;
+                }
+            };
+
+            // Log the user in
+            Auth::login($user);
+
+            return redirect()->route('dashboard')->with('success', 'Account created successfully!');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'Failed to create account. Please try again.'])->withInput();
+        }
     }
 
     public function logout()
     {
         // Logic untuk logout
-        // Auth::logout();
+        Auth::logout();
         return redirect()->route('sign-in')->with('success', 'You have been logged out successfully');
     }
 }

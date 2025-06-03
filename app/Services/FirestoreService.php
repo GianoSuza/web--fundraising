@@ -6,19 +6,19 @@ use Google\Cloud\Firestore\FirestoreClient;
 
 class FirestoreService
 {
-    protected $firestore;
+    protected $firestoreClient;
 
     public function __construct()
     {
-        $this->firestore = new FirestoreClient([
+        $this->firestoreClient = new FirestoreClient([
             'keyFilePath' => base_path(env('FIREBASE_CREDENTIALS')),
-            'projectId' => 'your-project-id'
+            'projectId' => env('FIREBASE_PROJECT_ID')
         ]);
     }
 
     public function getCollection($name)
     {
-        return $this->firestore->collection($name);
+        return $this->firestoreClient->collection($name);
     }
 
     public function addDocument($collection, $data)
@@ -44,5 +44,19 @@ class FirestoreService
     public function deleteDocument($collection, $id)
     {
         return $this->getCollection($collection)->document($id)->delete();
+    }
+
+    public function getUserByEmail(string $email)
+    {
+        $users = $this->firestoreClient->collection('users')->where('email', '=', $email)->limit(1)->documents();
+    
+        foreach ($users as $user) {
+            return [
+                'id' => $user->id(),
+                'data' => $user->data()
+            ];
+        }
+    
+        return null;
     }
 }

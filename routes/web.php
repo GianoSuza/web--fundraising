@@ -8,6 +8,7 @@ use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\DonateController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\MyDonationsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,6 +43,7 @@ Route::get('/forgot-password', function() {
 
 // Dashboard Routes (protected)
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/search', [DashboardController::class, 'search'])->name('search');
 
 // Account Routes
 Route::get('/account', [AccountController::class, 'index'])->name('account');
@@ -61,30 +63,31 @@ Route::post('/account/delete', [AccountController::class, 'delete'])->name('acco
 // Topup Routes
 Route::get('/topup', [TopupController::class, 'index'])->name('topup');
 Route::post('/topup/process', [TopupController::class, 'process'])->name('topup.process');
-Route::get('/topup/success', [TopupController::class, 'success'])->name('topup.success');
 Route::get('/topup/instruction', [TopupController::class, 'instruction'])->name('topup.instruction');
+Route::match(['get', 'post'], '/topup/confirm', [TopupController::class, 'confirmPayment'])->name('topup.confirm');
+Route::get('/topup/success', [TopupController::class, 'success'])->name('topup.success');
 
 // Create Campaign Routes
 Route::get('/campaign/create', [CampaignController::class, 'create'])->name('campaign.create');
 Route::post('/campaign/store', [CampaignController::class, 'store'])->name('campaign.store');
+Route::post('/campaign/generate-description', [CampaignController::class, 'generateDescription'])->name('campaign.generate-description');
 
 // Campaign Routes
 Route::get('/campaign/{id}', [CampaignController::class, 'detail'])->name('campaign.detail');
 Route::get('/campaign/{id}/donate', [CampaignController::class, 'donate'])->name('campaign.donate');
 
 // Donate Routes
-Route::get('/donate', [DonateController::class, 'index'])->name('donate');
+Route::get('/donate/{campaignId}', [DonateController::class, 'index'])->name('donate');
 Route::post('/donate/process', [DonateController::class, 'process'])->name('donate.process');
 Route::get('/donate/instruction', [DonateController::class, 'instruction'])->name('donate.instruction');
+Route::match(['get', 'post'], '/donate/confirm', [DonateController::class, 'confirmPayment'])->name('donate.confirm');
 Route::get('/donate/success', [DonateController::class, 'success'])->name('donate.success');
 
 // Other Routes
 Route::get('/history', [HistoryController::class, 'index'])->name('history');
 Route::get('/history/search', [HistoryController::class, 'search'])->name('history.search');
 
-Route::get('/my-donations', function() {
-    return view('my-donations');
-})->name('my-donations');
+Route::get('/my-donations', [MyDonationsController::class, 'index'])->name('my-donations');
 
 Route::get('/donation-reminder', function() {
     return view('donation-reminder');

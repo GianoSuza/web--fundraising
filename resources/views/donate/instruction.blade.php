@@ -240,7 +240,7 @@
                     
                     @if($selectedMethod == 'qris')
                         <!-- QRIS Payment -->
-                        <img src="/images/qr-code-sample.png" alt="QRIS Code" class="qr-code">
+                        <img src="/images/qris-sample.jpg" alt="QRIS Code" class="qr-code">
                         <p class="text-gray-600">{{ session('locale') == 'en' ? 'Please scan this QR for donation' : 'Silakan scan QR ini untuk donasi' }}</p>
                     @elseif($selectedMethod == 'balance')
                         <!-- Balance Payment -->
@@ -327,13 +327,17 @@
             <a href="{{ route('donate', ['campaign_id' => $campaign['id']]) }}" class="flex-1 border border-gray-300 text-gray-700 text-center py-4 px-6 rounded-xl font-semibold hover:bg-gray-50 transition-colors">
                 {{ session('locale') == 'en' ? 'Change Method' : 'Ubah Metode' }}
             </a>
-            <button class="submit-btn flex-1 text-white text-center" onclick="confirmDonation()">
-                @if($selectedMethod == 'qris')
-                    {{ session('locale') == 'en' ? 'I have scanned QR' : 'Saya sudah scan QR' }}
-                @else
-                    {{ session('locale') == 'en' ? 'I have transferred' : 'Saya sudah transfer' }}
-                @endif
-            </button>
+            <form action="{{ route('donate.confirm') }}" method="POST" class="flex-1" id="confirmForm">
+                @csrf
+                <input type="hidden" name="amount" value="{{ $amount }}">
+                <button type="submit" class="submit-btn w-full text-white text-center" id="confirmButton">
+                    @if($selectedMethod == 'qris')
+                        {{ session('locale') == 'en' ? 'I have scanned QR' : 'Saya sudah scan QR' }}
+                    @else
+                        {{ session('locale') == 'en' ? 'I have transferred' : 'Saya sudah transfer' }}
+                    @endif
+                </button>
+            </form>
         </div>
     </div>
 
@@ -343,6 +347,9 @@
     </div>
 
     <script>
+        // Get locale from PHP
+        const currentLocale = "{{ session('locale', 'id') }}";
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Apply dark mode on page load
             const isDarkMode = localStorage.getItem('darkMode') === 'true';
@@ -350,42 +357,49 @@
                 document.documentElement.classList.add('dark');
                 document.body.classList.add('dark');
             }
+
+            // Handle form submission
+            const confirmForm = document.getElementById('confirmForm');
+            const confirmButton = document.getElementById('confirmButton');
+
+            confirmForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Disable button and show loading state
+                confirmButton.disabled = true;
+                confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>' + 
+                    (currentLocale === 'en' ? 'Processing...' : 'Memproses...');
+
+                // Submit the form
+                this.submit();
+            });
         });
 
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(function() {
-                // Show success message
-                showToast('{{ session('locale') == 'en' ? 'Copied to clipboard!' : 'Disalin ke clipboard!' }}');
+                showToast(currentLocale === 'en' ? 'Copied to clipboard!' : 'Disalin ke clipboard!');
             }, function(err) {
                 console.error('Could not copy text: ', err);
             });
         }
 
         function showToast(message) {
-            // Create toast notification
             const toast = document.createElement('div');
             toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
             toast.textContent = message;
             
             document.body.appendChild(toast);
             
-            // Show toast
             setTimeout(() => {
                 toast.classList.remove('translate-x-full');
             }, 100);
             
-            // Hide toast
             setTimeout(() => {
                 toast.classList.add('translate-x-full');
                 setTimeout(() => {
                     document.body.removeChild(toast);
                 }, 300);
             }, 3000);
-        }
-
-        function confirmDonation() {
-            // Redirect to success page
-            window.location.href = '{{ route('donate.success') }}';
         }
     </script>
 </body>

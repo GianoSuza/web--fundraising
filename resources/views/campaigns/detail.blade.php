@@ -242,9 +242,49 @@
                         <p class="text-sm text-gray-500">{{ session('locale') == 'en' ? 'Verified Account' : 'Akun Terverifikasi' }}</p>
                     </div>
                 </div>
-                <button class="donate-btn text-white">
+                <button class="donate-btn text-white" onclick="donate()">
                     {{ session('locale') == 'en' ? 'Donate Now' : 'Donasi Sekarang' }}
                 </button>
+            </div>
+        </div>
+
+        <!-- Tabs Section -->
+        <div class="bg-white rounded-lg shadow-sm mb-6 transition-colors duration-300">
+            <!-- Tab Buttons -->
+            <div class="flex border-b border-gray-200">
+                <button class="tab-button active" onclick="switchTab('story')">
+                    {{ session('locale') == 'en' ? 'Story' : 'Cerita' }}
+                </button>
+                <button class="tab-button" onclick="switchTab('updates')">
+                    {{ session('locale') == 'en' ? 'Updates' : 'Update' }}
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6">
+                <!-- Story Tab -->
+                <div id="storyTab" class="tab-content">
+                    <p class="text-gray-700 whitespace-pre-line">{{ $campaign['story'] }}</p>
+                </div>
+
+                <!-- Updates Tab -->
+                <div id="updatesTab" class="tab-content hidden">
+                    @if(count($campaign['updates']) > 0)
+                        @foreach($campaign['updates'] as $update)
+                            <div class="update-card">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-semibold text-gray-800">{{ $update['title'] }}</h4>
+                                    <span class="text-sm text-gray-500">{{ $update['date'] }}</span>
+                                </div>
+                                <p class="text-gray-600">{{ $update['content'] }}</p>
+                            </div>
+                        @endforeach
+                    @else
+                        <p class="text-gray-500 text-center py-4">
+                            {{ session('locale') == 'en' ? 'No updates yet' : 'Belum ada update' }}
+                        </p>
+                    @endif
+                </div>
             </div>
         </div>
 
@@ -273,7 +313,25 @@
 
         function donate() {
             // Redirect to donation page
-            window.location.href = '{{ route('campaign.donate', $campaign['id']) }}';
+            window.location.href = '{{ route('donate', $campaign['id']) }}';
+        }
+
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+            
+            // Add active class to selected tab button
+            event.target.classList.add('active');
         }
 
         // Add click event to donate buttons

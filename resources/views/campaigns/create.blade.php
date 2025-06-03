@@ -89,6 +89,69 @@
             object-fit: contain;
             margin: 0 auto;
         }
+
+        .category-option input[type="radio"]:checked + label {
+            background-color: #4ECDC4 !important;
+            border-color: #4ECDC4 !important;
+        }
+
+        .category-option input[type="radio"]:checked + label span {
+            color: white !important;
+        }
+
+        .category-option label {
+            transition: all 0.2s ease-in-out;
+            background-color: white;
+        }
+
+        .category-option label:hover {
+            border-color: #4ECDC4;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 50;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 2rem 1.5rem 1.5rem 1.5rem;
+            max-width: 95vw;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            position: relative;
+            animation: modalFadeIn 0.2s;
+        }
+        @keyframes modalFadeIn {
+            from { transform: translateY(40px) scale(0.98); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .close-modal {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #888;
+        }
+        .close-modal:hover {
+            color: #4ECDC4;
+        }
+        body.modal-open {
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -127,7 +190,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('campaign.store') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('campaign.store') }}" method="POST" enctype="multipart/form-data" id="donationForm">
                 @csrf
                 
                 <!-- Donation Name -->
@@ -143,11 +206,8 @@
                         class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
                         required
                         maxlength="255"
-                        placeholder="{{ session('locale') == 'en' ? 'Enter campaign name' : 'Masukkan nama kampanye' }}"
+                        placeholder="{{ session('locale') == 'en' ? 'Enter donation name' : 'Masukkan nama donasi' }}"
                     >
-                    <div class="text-xs text-gray-500 mt-1 flex justify-end">
-                        <span id="name-counter">0</span>/255
-                    </div>
                 </div>
                 
                 <!-- Target Value -->
@@ -184,15 +244,18 @@
                         @foreach($categories as $value => $category)
                             <div class="category-option">
                                 <input type="radio" name="category" id="category_{{ $value }}" value="{{ $value }}" class="hidden" {{ old('category') == $value ? 'checked' : '' }} required>
-                                <label for="category_{{ $value }}" class="block border border-gray-200 rounded-lg p-4 text-center cursor-pointer hover:border-custom-teal transition-colors">
+                                <label for="category_{{ $value }}" class="block border border-gray-200 rounded-lg p-4 text-center cursor-pointer transition-colors">
                                     <div class="mb-2">
                                         <img src="{{ asset($category['image']) }}" alt="{{ $category['name'] }}" class="category-image">
                                     </div>
-                                    <span class="text-sm font-medium">{{ $category['name'] }}</span>
+                                    <span class="text-sm font-medium text-gray-700">{{ $category['name'] }}</span>
                                 </label>
                             </div>
                         @endforeach
                     </div>
+                    @error('category')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
                 
                 <!-- Description -->
@@ -200,19 +263,28 @@
                     <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
                         {{ session('locale') == 'en' ? 'Description' : 'Deskripsi' }} *
                     </label>
-                    <textarea 
-                        id="description" 
-                        name="description" 
-                        rows="5" 
-                        class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
-                        required
-                        minlength="50"
-                        placeholder="{{ session('locale') == 'en' ? 'Describe your campaign in detail...' : 'Jelaskan kampanye Anda secara detail...' }}"
-                    >{{ old('description') }}</textarea>
-                    <div class="text-xs text-gray-500 mt-1 flex justify-between">
-                        <span>{{ session('locale') == 'en' ? 'Minimum 50 characters' : 'Minimal 50 karakter' }}</span>
-                        <span><span id="desc-counter">0</span> {{ session('locale') == 'en' ? 'characters' : 'karakter' }}</span>
+                    <div class="relative">
+                        <textarea 
+                            id="description" 
+                            name="description" 
+                            rows="5" 
+                            class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent"
+                            required
+                            minlength="50"
+                            placeholder="{{ session('locale') == 'en' ? 'Describe your campaign in detail...' : 'Jelaskan kampanye Anda secara detail...' }}"
+                        >{{ old('description') }}</textarea>
+                        <button 
+                            type="button"
+                            onclick="showAIPromptModal()"
+                            class="absolute right-2 top-2 p-2 text-custom-teal hover:bg-gray-100 rounded-full transition-colors"
+                            title="{{ session('locale') == 'en' ? 'Generate description using AI' : 'Buat deskripsi menggunakan AI' }}"
+                        >
+                            <i class="fas fa-magic"></i>
+                        </button>
                     </div>
+                    <p class="text-xs text-gray-500 mt-1">
+                        {{ session('locale') == 'en' ? 'Minimum 50 characters' : 'Minimal 50 karakter' }}
+                    </p>
                 </div>
                 
                 <!-- Finish Date -->
@@ -267,6 +339,38 @@
         </div>
     </div>
 
+    <!-- AI Prompt Modal -->
+    <div id="aiPromptModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeAIPromptModal()">&times;</span>
+            <h2 class="text-xl font-bold mb-4">{{ session('locale') == 'en' ? 'Generate Description' : 'Buat Deskripsi' }}</h2>
+            <p class="text-sm text-gray-600 mb-4">
+                {{ session('locale') == 'en' ? 'Enter a prompt to generate a campaign description. For example: "A campaign to help underprivileged children get access to education"' : 'Masukkan prompt untuk membuat deskripsi kampanye. Contoh: "Sebuah kampanye untuk membantu anak-anak kurang mampu mendapatkan akses pendidikan"' }}
+            </p>
+            <textarea 
+                id="prompt" 
+                class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-custom-teal focus:border-transparent mb-4"
+                rows="4"
+                placeholder="{{ session('locale') == 'en' ? 'Enter your prompt here...' : 'Masukkan prompt Anda di sini...' }}"
+            ></textarea>
+            <div class="flex justify-end space-x-4">
+                <button 
+                    onclick="closeAIPromptModal()"
+                    class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                    {{ session('locale') == 'en' ? 'Cancel' : 'Batal' }}
+                </button>
+                <button 
+                    onclick="generateDescription()"
+                    class="px-4 py-2 bg-custom-teal text-white rounded-lg hover:bg-custom-teal transition-colors"
+                    id="generateButton"
+                >
+                    {{ session('locale') == 'en' ? 'Generate' : 'Buat' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Apply dark mode on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -279,7 +383,11 @@
             // Initialize date picker
             flatpickr("#finish_date", {
                 minDate: "today",
-                dateFormat: "Y-m-d"
+                dateFormat: "Y-m-d",
+                disableMobile: "true",
+                locale: {
+                    firstDayOfWeek: 1
+                }
             });
             
             // Character counters
@@ -305,20 +413,35 @@
             
             // Category selection
             const categoryOptions = document.querySelectorAll('input[name="category"]');
+            
             categoryOptions.forEach(option => {
                 option.addEventListener('change', function() {
-                    document.querySelectorAll('.category-option label').forEach(label => {
-                        label.classList.remove('border-custom-teal', 'border-2');
-                    });
-                    
-                    if (this.checked) {
-                        this.parentElement.querySelector('label').classList.add('border-custom-teal', 'border-2');
+                    // The CSS will handle the styling automatically
+                });
+            });
+
+            // Form submission
+            const form = document.getElementById('donationForm');
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Validate required fields
+                const requiredFields = form.querySelectorAll('[required]');
+                let isValid = true;
+                
+                requiredFields.forEach(field => {
+                    if (!field.value) {
+                        isValid = false;
+                        field.classList.add('border-red-500');
+                    } else {
+                        field.classList.remove('border-red-500');
                     }
                 });
                 
-                // Set initial state
-                if (option.checked) {
-                    option.parentElement.querySelector('label').classList.add('border-custom-teal', 'border-2');
+                if (isValid) {
+                    form.submit();
+                } else {
+                    alert('{{ session("locale") == "en" ? "Please fill in all required fields" : "Mohon isi semua field yang wajib diisi" }}');
                 }
             });
         });
@@ -353,6 +476,61 @@
             
             // Update the input value
             input.value = value;
+        }
+
+        // AI Prompt Modal
+        function showAIPromptModal() {
+            document.getElementById('aiPromptModal').classList.add('active');
+            document.body.classList.add('modal-open');
+        }
+
+        function closeAIPromptModal() {
+            document.getElementById('aiPromptModal').classList.remove('active');
+            document.body.classList.remove('modal-open');
+            document.getElementById('prompt').value = '';
+        }
+
+        async function generateDescription() {
+            const prompt = document.getElementById('prompt').value;
+            if (!prompt) return;
+
+            const button = document.getElementById('generateButton');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
+
+            try {
+                const response = await fetch('{{ route("campaign.generate-description") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+
+                const data = await response.json();
+                if (data.description) {
+                    document.getElementById('description').value = data.description;
+                    closeAIPromptModal();
+                } else {
+                    alert('{{ session("locale") == "en" ? "Failed to generate description" : "Gagal membuat deskripsi" }}');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('{{ session("locale") == "en" ? "Failed to generate description" : "Gagal membuat deskripsi" }}');
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('aiPromptModal');
+            if (event.target === modal) {
+                closeAIPromptModal();
+            }
         }
     </script>
 </body>

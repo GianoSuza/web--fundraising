@@ -107,18 +107,11 @@
                 <div class="flex-1">
                     <h2 class="text-xl font-bold text-gray-800">{{ $user['name'] }}</h2>
                     <p class="text-gray-600 text-sm">{{ $user['email'] }}</p>
-                    @if(isset($user['phone']))
-                    <p class="text-gray-500 text-xs mt-1">{{ $user['phone'] }}</p>
-                    @endif
                 </div>
             </div>
             
             <!-- Action Buttons -->
             <div class="flex space-x-3">
-                <a href="{{ route('account.editProfile') }}" class="flex-1 flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    <i class="fas fa-user-edit text-gray-600 mr-2"></i>
-                    <span class="text-gray-700 text-sm">{{ session('locale') == 'en' ? 'Edit Profile' : 'Edit Profil' }}</span>
-                </a>
                 <a href="{{ route('topup') }}" class="flex-1 flex items-center justify-center px-4 py-2 bg-custom-teal rounded-lg hover:bg-custom-teal transition-colors">
                     <i class="fas fa-plus text-white mr-2"></i>
                     <span class="text-white text-sm">Top up</span>
@@ -139,17 +132,6 @@
                 <i class="fas fa-chevron-right text-gray-400"></i>
             </a>
 
-            <!-- Donation Reminder -->
-            <a href="{{ route('donation-reminder') }}" class="menu-item flex items-center justify-between p-4 border-b border-gray-100 cursor-pointer transition-all duration-200">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-bell text-yellow-500"></i>
-                    </div>
-                    <span class="text-gray-800 font-medium">{{ session('locale') == 'en' ? 'Donation reminder' : 'Pengingat donasi' }}</span>
-                </div>
-                <i class="fas fa-chevron-right text-gray-400"></i>
-            </a>
-
             <!-- Change Password -->
             <a href="{{ route('account.changePassword') }}" class="menu-item flex items-center justify-between p-4 border-b border-gray-100 cursor-pointer transition-all duration-200">
                 <div class="flex items-center space-x-3">
@@ -157,17 +139,6 @@
                         <i class="fas fa-key text-blue-500"></i>
                     </div>
                     <span class="text-gray-800 font-medium">{{ session('locale') == 'en' ? 'Change password' : 'Ubah password' }}</span>
-                </div>
-                <i class="fas fa-chevron-right text-gray-400"></i>
-            </a>
-
-            <!-- Settings -->
-            <a href="{{ route('account.setting') }}" class="menu-item flex items-center justify-between p-4 cursor-pointer transition-all duration-200">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-cog text-gray-500"></i>
-                    </div>
-                    <span class="text-gray-800 font-medium">{{ session('locale') == 'en' ? 'Settings' : 'Pengaturan' }}</span>
                 </div>
                 <i class="fas fa-chevron-right text-gray-400"></i>
             </a>

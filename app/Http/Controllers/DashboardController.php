@@ -3,66 +3,162 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Services\FirestoreService;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    protected $firestoreService;
+
+    public function __construct(FirestoreService $firestoreService)
+    {
+        $this->firestoreService = $firestoreService;
+    }
+
     public function index()
     {
-        // Logic untuk mengambil data dashboard
-        $donationBalance = 500000; // Simulasi saldo donasi
+        // Get current user data from session or Firestore
+        $user = Auth::user();
+        $userData = session('user_data');
         
-        // Data campaign terbaru
-        $latestCampaigns = [
-            [
-                'id' => 1,
-                'title' => 'Bantu Korban Banjir Jakarta',
-                'category' => 'Bencana Alam',
-                'image' => 'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=400&h=300&fit=crop',
-                'collected' => 15000000,
-                'progress' => 75
-            ],
-            [
-                'id' => 2,
-                'title' => 'Operasi Jantung Anak',
-                'category' => 'Kesehatan',
-                'image' => 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=300&fit=crop',
-                'collected' => 8500000,
-                'progress' => 42
-            ],
-            [
-                'id' => 3,
-                'title' => 'Bantuan Pendidikan Anak Yatim',
-                'category' => 'Pendidikan',
-                'image' => 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=400&h=300&fit=crop',
-                'collected' => 12000000,
-                'progress' => 60
-            ]
-        ];
+        if (!$userData && $user) {
+            $userData = $this->firestoreService->getUserByEmail($user->email);
+            if ($userData) {
+                session(['user_data' => $userData['data']]);
+                $userData = $userData['data'];
+            }
+        }
         
-        // Data campaign selesai
-        $finishedCampaigns = [
-            [
-                'id' => 4,
-                'title' => 'Bantuan Gempa Lombok',
-                'image' => 'https://images.unsplash.com/photo-1574169208507-84376144848b?w=300&h=200&fit=crop'
-            ],
-            [
-                'id' => 5,
-                'title' => 'Operasi Katarak Lansia',
-                'image' => 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=300&h=200&fit=crop'
-            ],
-            [
-                'id' => 6,
-                'title' => 'Beasiswa Anak Kurang Mampu',
-                'image' => 'https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=300&h=200&fit=crop'
-            ],
-            [
-                'id' => 7,
-                'title' => 'Bantuan Pangan Ramadan',
-                'image' => 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=300&h=200&fit=crop'
-            ]
-        ];
+        $donationBalance = $userData['saldo'] ?? 0;
+
+        // Get latest campaigns from donations collection
+        $donationsRef = $this->firestoreService->getCollection('donations');
+        $latestCampaigns = [];
+        $finishedCampaigns = [];
+
+        try {
+            // Get latest active campaigns (where finishDate is in the future)
+            $now = new \Google\Cloud\Core\Timestamp(new \DateTime());
+            $latestCampaignsQuery = $donationsRef->where('finishDate', '>', $now)
+                ->orderBy('createdAt', 'desc');
+            
+            foreach ($latestCampaignsQuery->documents() as $doc) {
+                $data = $doc->data();
+                $latestCampaigns[] = [
+                    'id' => $doc->id(),
+                    'title' => $data['name'] ?? 'Untitled Campaign',
+                    'category' => $data['category'] ?? 'Uncategorized',
+                    'image' => !empty($data['imageUrls']) ? $data['imageUrls'][0] : 'images/default-campaign.jpg',
+                    'collected' => $data['progress'] ?? 0,
+                    'progress' => isset($data['progress'], $data['target']) 
+                        ? ($data['progress'] / $data['target']) * 100 
+                        : 0
+                ];
+            }
+
+            // Get finished campaigns (where finishDate is in the past)
+            $finishedCampaignsQuery = $donationsRef->where('finishDate', '<=', $now)
+                ->orderBy('createdAt', 'desc');
+            
+            foreach ($finishedCampaignsQuery->documents() as $doc) {
+                $data = $doc->data();
+                $finishedCampaigns[] = [
+                    'id' => $doc->id(),
+                    'title' => $data['name'] ?? 'Untitled Campaign',
+                    'image' => !empty($data['imageUrls']) ? $data['imageUrls'][0] : 'images/default-campaign.jpg'
+                ];
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error fetching campaigns: ' . $e->getMessage());
+            
+            // If index is not ready, fallback to simple query
+            if (strpos($e->getMessage(), 'requires an index') !== false) {
+                \Log::info('Falling back to simple query without ordering');
+                
+                // Fallback query without ordering
+                $latestCampaignsQuery = $donationsRef->where('finishDate', '>', $now);
+                
+                foreach ($latestCampaignsQuery->documents() as $doc) {
+                    $data = $doc->data();
+                    $latestCampaigns[] = [
+                        'id' => $doc->id(),
+                        'title' => $data['name'] ?? 'Untitled Campaign',
+                        'category' => $data['category'] ?? 'Uncategorized',
+                        'image' => !empty($data['imageUrls']) ? $data['imageUrls'][0] : 'images/default-campaign.jpg',
+                        'collected' => $data['progress'] ?? 0,
+                        'progress' => isset($data['progress'], $data['target']) 
+                            ? ($data['progress'] / $data['target']) * 100 
+                            : 0
+                    ];
+                }
+
+                // Fallback for finished campaigns
+                $finishedCampaignsQuery = $donationsRef->where('finishDate', '<=', $now);
+                
+                foreach ($finishedCampaignsQuery->documents() as $doc) {
+                    $data = $doc->data();
+                    $finishedCampaigns[] = [
+                        'id' => $doc->id(),
+                        'title' => $data['name'] ?? 'Untitled Campaign',
+                        'image' => !empty($data['imageUrls']) ? $data['imageUrls'][0] : 'images/default-campaign.jpg'
+                    ];
+                }
+            } else {
+                // If it's a different error, throw it
+                throw $e;
+            }
+        }
+
+        \Log::info('Latest campaigns count: ' . count($latestCampaigns));
+        \Log::info('Finished campaigns count: ' . count($finishedCampaigns));
 
         return view('dashboard', compact('donationBalance', 'latestCampaigns', 'finishedCampaigns'));
+    }
+
+    public function search(Request $request)
+    {
+        $query = $request->input('q');
+        $category = $request->input('category');
+        
+        if (strlen($query) < 3 && !$category) {
+            return response()->json([]);
+        }
+
+        $donationsRef = $this->firestoreService->getCollection('donations');
+        $searchQuery = $donationsRef;
+
+        // Apply category filter if provided
+        if ($category) {
+            $searchQuery = $searchQuery->where('category', '=', $category);
+        }
+
+        // Apply search query if provided
+        if (strlen($query) >= 3) {
+            // Search in both name and description
+            $searchQuery = $searchQuery->where(function($q) use ($query) {
+                $q->where('name', '>=', $query)
+                  ->where('name', '<=', $query . '\uf8ff')
+                  ->orWhere('description', '>=', $query)
+                  ->where('description', '<=', $query . '\uf8ff');
+            });
+        }
+
+        // Get all matching campaigns
+        $results = [];
+        foreach ($searchQuery->documents() as $doc) {
+            $data = $doc->data();
+            $results[] = [
+                'id' => $doc->id(),
+                'title' => $data['name'] ?? 'Untitled Campaign',
+                'category' => $data['category'] ?? 'Uncategorized',
+                'image' => !empty($data['imageUrls']) ? $data['imageUrls'][0] : 'images/default-campaign.jpg',
+                'collected' => $data['progress'] ?? 0,
+                'progress' => isset($data['progress'], $data['target']) 
+                    ? ($data['progress'] / $data['target']) * 100 
+                    : 0
+            ];
+        }
+
+        return response()->json($results);
     }
 }

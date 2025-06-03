@@ -6,18 +6,25 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
+use App\Services\FirestoreService;
 
 class AccountController extends Controller
 {
     public function index()
     {
-        // Logic untuk mengambil data user (biasanya dari Auth::user())
+        // Get user data from session
+        $userData = session('user_data');
+        if (!$userData) {
+            return redirect()->route('dashboard')->with('error', 'User data not found');
+        }
+
+        // Format user data for view
         $user = [
-            'name' => 'Mohammad Salah',
-            'email' => 'mosalah@gmail.com',
-            'phone' => '+628445578293',
-            'gender' => 'Male',
-            'avatar' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+            'name' => $userData['name'] ?? 'User',
+            'email' => $userData['email'] ?? '',
+            'phone' => $userData['phone'] ?? '',
+            'gender' => $userData['gender'] ?? '',
+            'avatar' => $userData['avatar'] ?? 'https://ui-avatars.com/api/?name=' . urlencode($userData['name'] ?? 'User')
         ];
 
         return view('account', compact('user'));
@@ -88,11 +95,18 @@ class AccountController extends Controller
 
     public function changePassword()
     {
-        // Logic untuk menampilkan halaman change password
+        $userData = session('user_data');
+        if (!$userData) {
+            return redirect()->route('dashboard')->with('error', 'User data not found');
+        }
+
+        // Format user data for view
         $user = [
-            'name' => 'Mohammad Salah',
-            'email' => 'mosalah@gmail.com',
-            'avatar' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+            'name' => $userData['name'] ?? 'User',
+            'email' => $userData['email'] ?? '',
+            'phone' => $userData['phone'] ?? '',
+            'gender' => $userData['gender'] ?? '',
+            'avatar' => $userData['avatar'] ?? 'https://ui-avatars.com/api/?name=' . urlencode($userData['name'] ?? 'User')
         ];
 
         return view('account.changePassword', compact('user'));
@@ -115,16 +129,42 @@ class AccountController extends Controller
             'new_password_confirmation.min' => session('locale') == 'en' ? 'Password confirmation must be at least 8 characters' : 'Konfirmasi password baru minimal 8 karakter',
         ]);
 
-        // Logic untuk verifikasi password lama dan update password baru
-        // Biasanya menggunakan:
-        // if (!Hash::check($request->current_password, Auth::user()->password)) {
-        //     return back()->withErrors(['current_password' => 'Password saat ini tidak benar']);
-        // }
-        // Auth::user()->update(['password' => Hash::make($request->new_password)]);
-        
-        // Simulasi update berhasil
-        $successMessage = session('locale') == 'en' ? 'Password updated successfully!' : 'Password berhasil diperbarui!';
-        return redirect()->route('account')->with('success', $successMessage);
+        // Get user data from session
+        $userData = session('user_data');
+        if (!$userData) {
+            return redirect()->route('dashboard')->with('error', 'User data not found');
+        }
+
+        try {
+            // Get user document from Firestore
+            $firestoreService = app(FirestoreService::class);
+            $userDoc = $firestoreService->getDocument('users', $userData['uid']);
+            
+            if (!$userDoc) {
+                return back()->withErrors(['current_password' => session('locale') == 'en' ? 'User not found' : 'Pengguna tidak ditemukan']);
+            }
+
+            // Verify current password (plain text comparison)
+            if ($request->current_password !== $userDoc['password']) {
+                return back()->withErrors(['current_password' => session('locale') == 'en' ? 'Current password is incorrect' : 'Password saat ini tidak benar']);
+            }
+
+            // Update password in Firestore (plain text)
+            $firestoreService->updateDocument('users', $userData['uid'], [
+                'password' => $request->new_password
+            ]);
+
+            // Update session data
+            $userData['password'] = $request->new_password;
+            session(['user_data' => $userData]);
+
+            $successMessage = session('locale') == 'en' ? 'Password updated successfully!' : 'Password berhasil diperbarui!';
+            return redirect()->route('account')->with('success', $successMessage);
+
+        } catch (\Exception $e) {
+            \Log::error('Password update error: ' . $e->getMessage());
+            return back()->withErrors(['error' => session('locale') == 'en' ? 'Failed to update password' : 'Gagal memperbarui password']);
+        }
     }
 
     public function setting()

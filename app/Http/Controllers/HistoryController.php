@@ -3,96 +3,97 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Services\FirestoreService;
+use Carbon\Carbon;
 
 class HistoryController extends Controller
 {
+    protected $firestoreService;
+
+    public function __construct(FirestoreService $firestoreService)
+    {
+        $this->firestoreService = $firestoreService;
+    }
+
     public function index()
     {
-        // Data untuk riwayat transaksi (biasanya dari database)
-        $transactions = [
-            'this_month' => [
-                [
-                    'id' => 1,
-                    'type' => 'topup',
-                    'title' => session('locale') == 'en' ? 'Top up balance' : 'Top up saldo',
-                    'amount' => 50000,
-                    'date' => '2024-04-05',
-                    'status' => 'completed'
-                ],
-                [
-                    'id' => 2,
-                    'type' => 'donation',
-                    'title' => session('locale') == 'en' ? 'Natural Disaster Aceh' : 'Bencana Alam Aceh',
-                    'amount' => -25000,
-                    'date' => '2024-04-04',
-                    'status' => 'completed'
-                ],
-                [
-                    'id' => 3,
-                    'type' => 'donation',
-                    'title' => session('locale') == 'en' ? 'Build Mosque' : 'Bangun Masjid',
-                    'amount' => -25000,
-                    'date' => '2024-04-04',
-                    'status' => 'completed'
-                ],
-                [
-                    'id' => 4,
-                    'type' => 'topup',
-                    'title' => session('locale') == 'en' ? 'Top up balance' : 'Top up saldo',
-                    'amount' => 50000,
-                    'date' => '2024-04-03',
-                    'status' => 'completed'
-                ],
-                [
-                    'id' => 5,
-                    'type' => 'donation',
-                    'title' => session('locale') == 'en' ? 'Build Mosque' : 'Bangun Masjid',
-                    'amount' => -10000,
-                    'date' => '2024-04-01',
-                    'status' => 'completed'
-                ]
-            ],
-            'march_2024' => [
-                [
-                    'id' => 6,
-                    'type' => 'donation',
-                    'title' => session('locale') == 'en' ? 'Flood Demak' : 'Banjir Demak',
-                    'amount' => -50000,
-                    'date' => '2024-03-29',
-                    'status' => 'completed'
-                ],
-                [
-                    'id' => 7,
-                    'type' => 'donation',
-                    'title' => session('locale') == 'en' ? 'Social assistance' : 'Bantuan sosial',
-                    'amount' => -50000,
-                    'date' => '2024-03-29',
-                    'status' => 'completed'
-                ],
-                [
-                    'id' => 8,
-                    'type' => 'topup',
-                    'title' => session('locale') == 'en' ? 'Top up balance' : 'Top up saldo',
-                    'amount' => 110000,
-                    'date' => '2024-03-25',
-                    'status' => 'completed'
-                ]
-            ]
-        ];
+        // Get user data from session
+        $userData = session('user_data');
+        if (!$userData) {
+            return redirect()->route('dashboard')->with('error', 'User data not found');
+        }
 
-        return view('history', compact('transactions'));
+        // Get transactions from Firestore
+        $transactions = $this->firestoreService->getCollection('transactions')
+            ->where('userId', '=', $userData['uid'])
+            ->documents();
+
+        // Group transactions by month
+        $groupedTransactions = [];
+        foreach ($transactions as $transaction) {
+            $data = $transaction->data();
+            $date = Carbon::parse($data['date']);
+            $monthKey = $date->format('F Y');
+            
+            if (!isset($groupedTransactions[$monthKey])) {
+                $groupedTransactions[$monthKey] = [];
+            }
+
+            $groupedTransactions[$monthKey][] = [
+                'id' => $transaction->id(),
+                'type' => $data['category'] === 'income' ? 'topup' : 'donation',
+                'title' => $data['name'],
+                'amount' => $data['category'] === 'income' ? $data['amount'] : -$data['amount'],
+                'date' => $date->format('Y-m-d'),
+                'status' => 'completed'
+            ];
+        }
+
+        // Sort months in descending order
+        krsort($groupedTransactions);
+        
+        // Sort transactions within each month by date (newest first)
+        foreach ($groupedTransactions as &$monthTransactions) {
+            usort($monthTransactions, function($a, $b) {
+                return strtotime($b['date']) - strtotime($a['date']);
+            });
+        }
+
+        return view('history', ['transactions' => $groupedTransactions]);
     }
 
     public function search(Request $request)
     {
         $query = $request->get('q');
+        $userData = session('user_data');
         
-        // Logic untuk mencari transaksi berdasarkan query
-        // Biasanya menggunakan database query dengan LIKE atau full-text search
-        
-        // Simulasi hasil pencarian
+        if (!$userData) {
+            return response()->json(['results' => []]);
+        }
+
+        // Get transactions from Firestore
+        $transactions = $this->firestoreService->getCollection('transactions')
+            ->where('userId', '=', $userData['uid'])
+            ->orderBy('date', 'desc')
+            ->documents();
+
         $results = [];
-        
+        foreach ($transactions as $transaction) {
+            $data = $transaction->data();
+            // Search in transaction name
+            if (stripos($data['name'], $query) !== false) {
+                $date = Carbon::parse($data['date']);
+                $results[] = [
+                    'id' => $transaction->id(),
+                    'type' => $data['category'] === 'income' ? 'topup' : 'donation',
+                    'title' => $data['name'],
+                    'amount' => $data['category'] === 'income' ? $data['amount'] : -$data['amount'],
+                    'date' => $date->format('Y-m-d'),
+                    'status' => 'completed'
+                ];
+            }
+        }
+
         return response()->json(['results' => $results]);
     }
 }
